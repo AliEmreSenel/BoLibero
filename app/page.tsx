@@ -1,149 +1,168 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { MapPin, ArrowRight, Clock, Calendar, Search } from "lucide-react"
-import { format, parseISO, isToday } from "date-fns"
-import { it, enUS } from "date-fns/locale"
-import Link from "next/link"
-import { ScheduleFetcher } from "@/lib/schedule-fetcher"
-import type { ScheduleData } from "@/lib/schedule-fetcher"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
-import { type Language, useTranslation } from "@/lib/i18n"
-import { loadSettings, saveSettings } from "@/lib/settings"
-import { isBuildingOpen } from "@/lib/building-hours"
-import { BuildingHours } from "@/components/building-hours"
+import { useState, useEffect, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { MapPin, ArrowRight, Clock, Calendar, Search } from "lucide-react";
+import { format, parseISO, isToday } from "date-fns";
+import { it, enUS } from "date-fns/locale";
+import Link from "next/link";
+import { ScheduleFetcher } from "@/lib/schedule-fetcher";
+import type { ScheduleData } from "@/lib/schedule-fetcher";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+import { type Language, useTranslation } from "@/lib/i18n";
+import { loadSettings, saveSettings } from "@/lib/settings";
+import { isBuildingOpen } from "@/lib/building-hours";
+import { BuildingHours } from "@/components/building-hours";
 
 interface TimeSlot {
-  start: string
-  end: string
+  start: string;
+  end: string;
 }
 
 export default function BSpace() {
-  const [scheduleData, setScheduleData] = useState<ScheduleData>({})
-  const [loading, setLoading] = useState(true)
-  const [selectedBuilding, setSelectedBuilding] = useState<string>("all")
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [startTime, setStartTime] = useState("")
-  const [endTime, setEndTime] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [language, setLanguage] = useState<Language>("en")
+  const [scheduleData, setScheduleData] = useState<ScheduleData>({});
+  const [loading, setLoading] = useState(true);
+  const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [language, setLanguage] = useState<Language>("en");
 
-  const fetcher = ScheduleFetcher.getInstance()
-  const t = useTranslation(language)
+  const fetcher = ScheduleFetcher.getInstance();
+  const t = useTranslation(language);
 
   // Load settings on mount
   useEffect(() => {
-    const loadedSettings = loadSettings()
-    setLanguage(loadedSettings.language)
-  }, [])
+    const loadedSettings = loadSettings();
+    setLanguage(loadedSettings.language);
+  }, []);
 
   const loadTodaySchedule = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const data = await fetcher.fetchTodaySchedule()
-      setScheduleData(data)
+      const data = await fetcher.fetchTodaySchedule();
+      setScheduleData(data);
     } catch (error) {
-      console.error("Error loading today schedule:", error)
-      setError(t.error)
+      console.error("Error loading today schedule:", error);
+      setError(t.error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    loadTodaySchedule()
-  }, [])
+    loadTodaySchedule();
+  }, []);
 
   const getCurrentTime = () => {
-    const now = new Date()
-    return format(now, "HH:mm")
-  }
+    const now = new Date();
+    return format(now, "HH:mm");
+  };
 
   const isRoomCurrentlyFree = (building: string, room: string) => {
-    const today = new Date()
+    const today = new Date();
 
     // Check if building is open today
     if (!isBuildingOpen(building, today)) {
-      return false
+      return false;
     }
 
-    const events = scheduleData[building]?.[room] || []
-    const currentTime = getCurrentTime()
-    const [currentHour, currentMin] = currentTime.split(":").map(Number)
-    const currentMinutes = currentHour * 60 + currentMin
+    const events = scheduleData[building]?.[room] || [];
+    const currentTime = getCurrentTime();
+    const [currentHour, currentMin] = currentTime.split(":").map(Number);
+    const currentMinutes = currentHour * 60 + currentMin;
 
     const todayEvents = events.filter((event) => {
-      const eventDate = parseISO(event.date)
-      return isToday(eventDate)
-    })
+      const eventDate = parseISO(event.date);
+      return isToday(eventDate);
+    });
 
     return !todayEvents.some((event) => {
-      const [startHour, startMin] = event.start.split(":").map(Number)
-      const [endHour, endMin] = event.end.split(":").map(Number)
-      const startMinutes = startHour * 60 + startMin
-      const endMinutes = endHour * 60 + endMin
+      const [startHour, startMin] = event.start.split(":").map(Number);
+      const [endHour, endMin] = event.end.split(":").map(Number);
+      const startMinutes = startHour * 60 + startMin;
+      const endMinutes = endHour * 60 + endMin;
 
       // 5-minute tolerance: room is considered occupied 5 minutes before class starts
-      return currentMinutes >= startMinutes - 5 && currentMinutes <= endMinutes
-    })
-  }
+      return currentMinutes >= startMinutes - 5 && currentMinutes <= endMinutes;
+    });
+  };
 
   const getFreeTimeSlots = (building: string, room: string): TimeSlot[] => {
-    return fetcher.getFreeTimeSlots(building, room, new Date())
-  }
+    return fetcher.getFreeTimeSlots(building, room, new Date());
+  };
 
   // Filter rooms based on time range
-  const isRoomAvailableInTimeRange = (building: string, room: string): boolean => {
-    if (!startTime && !endTime) return true
+  const isRoomAvailableInTimeRange = (
+    building: string,
+    room: string,
+  ): boolean => {
+    if (!startTime && !endTime) return true;
 
-    const freeSlots = getFreeTimeSlots(building, room)
-    const searchStart = startTime || "00:00"
-    const searchEnd = endTime || "23:59"
+    const freeSlots = getFreeTimeSlots(building, room);
+    const searchStart = startTime;
+    const searchEnd = endTime;
 
     return freeSlots.some((slot) => {
-      return slot.start <= searchStart && slot.end >= searchEnd
-    })
-  }
+      return (
+        (!searchStart ||
+          (slot.start <= searchStart && slot.end >= searchStart)) &&
+        (!searchEnd || (slot.start <= searchEnd && slot.end >= searchEnd))
+      );
+    });
+  };
 
-  const visibleBuildings = fetcher.getVisibleBuildings()
+  const visibleBuildings = fetcher.getVisibleBuildings();
   const allRooms = Object.entries(scheduleData).flatMap(([building, rooms]) =>
     Object.keys(rooms).map((room) => ({ building, room })),
-  )
+  );
 
   const filteredRooms = useMemo(() => {
     return allRooms.filter(({ building, room }) => {
-      const buildingMatch = selectedBuilding === "all" || building === selectedBuilding
+      const buildingMatch =
+        selectedBuilding === "all" || building === selectedBuilding;
       const searchMatch =
         !searchQuery ||
         room.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.toLowerCase().includes(searchQuery.toLowerCase())
-      const availabilityMatch = !showOnlyAvailable || isRoomCurrentlyFree(building, room)
-      const timeRangeMatch = isRoomAvailableInTimeRange(building, room)
+        building.toLowerCase().includes(searchQuery.toLowerCase());
+      const availabilityMatch =
+        !showOnlyAvailable || isRoomCurrentlyFree(building, room);
+      const timeRangeMatch = isRoomAvailableInTimeRange(building, room);
 
-      return buildingMatch && searchMatch && availabilityMatch && timeRangeMatch
-    })
-  }, [allRooms, selectedBuilding, searchQuery, showOnlyAvailable, startTime, endTime, scheduleData])
+      return (
+        buildingMatch && searchMatch && availabilityMatch && timeRangeMatch
+      );
+    });
+  }, [
+    allRooms,
+    selectedBuilding,
+    searchQuery,
+    showOnlyAvailable,
+    startTime,
+    endTime,
+    scheduleData,
+  ]);
 
   const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage)
-    const currentSettings = loadSettings()
-    saveSettings({ ...currentSettings, language: newLanguage })
-  }
+    setLanguage(newLanguage);
+    const currentSettings = loadSettings();
+    saveSettings({ ...currentSettings, language: newLanguage });
+  };
 
   const handleReset = () => {
-    setSearchQuery("")
-    setStartTime("")
-    setEndTime("")
-    setSelectedBuilding("all")
-    setShowOnlyAvailable(false)
-  }
+    setSearchQuery("");
+    setStartTime("");
+    setEndTime("");
+    setSelectedBuilding("all");
+    setShowOnlyAvailable(false);
+  };
 
   if (loading) {
     return (
@@ -156,7 +175,7 @@ export default function BSpace() {
         </div>
         <Footer language={language} />
       </div>
-    )
+    );
   }
 
   return (
@@ -180,21 +199,23 @@ export default function BSpace() {
             </div>
           </div>
 
-          {/* Building Hours Info */}
+          {/* Building Hours Info 
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-4">{t.buildingHours}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.entries(visibleBuildings).map(([buildingKey, displayName]) => (
-                <BuildingHours
-                  key={buildingKey}
-                  buildingKey={buildingKey}
-                  buildingName={displayName}
-                  language={language}
-                  compact={true}
-                />
-              ))}
+              {Object.entries(visibleBuildings).map(
+                ([buildingKey, displayName]) => (
+                  <BuildingHours
+                    key={buildingKey}
+                    buildingKey={buildingKey}
+                    buildingName={displayName}
+                    language={language}
+                    compact={false}
+                  />
+                ),
+              )}
             </div>
-          </div>
+          </div>*/}
 
           {/* Search and Filters */}
           <Card className="mb-6">
@@ -242,16 +263,20 @@ export default function BSpace() {
                 >
                   {t.allCampuses}
                 </Button>
-                {Object.entries(visibleBuildings).map(([buildingKey, displayName]) => (
-                  <Button
-                    key={buildingKey}
-                    variant={selectedBuilding === buildingKey ? "default" : "outline"}
-                    onClick={() => setSelectedBuilding(buildingKey)}
-                    className="rounded-full"
-                  >
-                    {displayName.toUpperCase()}
-                  </Button>
-                ))}
+                {Object.entries(visibleBuildings).map(
+                  ([buildingKey, displayName]) => (
+                    <Button
+                      key={buildingKey}
+                      variant={
+                        selectedBuilding === buildingKey ? "default" : "outline"
+                      }
+                      onClick={() => setSelectedBuilding(buildingKey)}
+                      className="rounded-full"
+                    >
+                      {displayName.toUpperCase()}
+                    </Button>
+                  ),
+                )}
               </div>
 
               {/* Filter Tabs */}
@@ -263,12 +288,16 @@ export default function BSpace() {
                   >
                     {t.allRooms}
                   </Button>
-                  <Button variant={showOnlyAvailable ? "default" : "ghost"} onClick={() => setShowOnlyAvailable(true)}>
+                  <Button
+                    variant={showOnlyAvailable ? "default" : "ghost"}
+                    onClick={() => setShowOnlyAvailable(true)}
+                  >
                     {t.availableNow}
                   </Button>
                 </div>
                 <div className="text-muted-foreground">
-                  {filteredRooms.length} {filteredRooms.length === 1 ? t.roomFound : t.roomsFound}
+                  {filteredRooms.length}{" "}
+                  {filteredRooms.length === 1 ? t.roomFound : t.roomsFound}
                 </div>
               </div>
             </CardContent>
@@ -284,12 +313,16 @@ export default function BSpace() {
           {/* Room Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRooms.map(({ building, room }) => {
-              const freeSlots = getFreeTimeSlots(building, room)
-              const isFree = isRoomCurrentlyFree(building, room)
-              const buildingDisplayName = fetcher.getBuildingDisplayName(building)
+              const freeSlots = getFreeTimeSlots(building, room);
+              const isFree = isRoomCurrentlyFree(building, room);
+              const buildingDisplayName =
+                fetcher.getBuildingDisplayName(building);
 
               return (
-                <Card key={`${building}-${room}`} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={`${building}-${room}`}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardContent className="p-6">
                     {/* Room Header */}
                     <div className="flex items-center justify-between mb-4">
@@ -310,14 +343,19 @@ export default function BSpace() {
                     {/* Free Slots Count */}
                     <div className="mb-4">
                       <div className="text-sm">
-                        {freeSlots.length} {freeSlots.length === 1 ? t.freeSlot : t.freeSlots}
+                        {freeSlots.length}{" "}
+                        {freeSlots.length === 1 ? t.freeSlot : t.freeSlots}
                       </div>
                     </div>
 
                     {/* Time Slot Badges */}
                     <div className="mb-4 flex flex-wrap gap-2">
                       {freeSlots.slice(0, 6).map((slot, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           <Clock className="h-3 w-3 mr-1" />
                           {slot.start} - {slot.end}
                         </Badge>
@@ -331,28 +369,37 @@ export default function BSpace() {
 
                     {/* Room Status */}
                     <div className="mb-4">
-                      <div className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}>
+                      <div
+                        className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
+                      >
                         {isFree ? `✓ ${t.availableNow}` : `✗ ${t.occupiedNow}`}
                       </div>
                     </div>
 
                     {/* More Info Link */}
-                    <Link href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}>
-                      <Button variant="ghost" className="w-full justify-between p-0 h-auto py-2">
+                    <Link
+                      href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}
+                    >
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between p-0 h-auto py-2"
+                      >
                         <span>{t.moreInfo}</span>
                         <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
                   </CardContent>
                 </Card>
-              )
+              );
             })}
           </div>
 
           {/* No Results */}
           {filteredRooms.length === 0 && !loading && (
             <div className="text-center py-12">
-              <div className="text-muted-foreground text-lg">{showOnlyAvailable ? t.noAvailableRooms : t.noRooms}</div>
+              <div className="text-muted-foreground text-lg">
+                {showOnlyAvailable ? t.noAvailableRooms : t.noRooms}
+              </div>
             </div>
           )}
         </div>
@@ -361,5 +408,5 @@ export default function BSpace() {
       {/* Footer */}
       <Footer language={language} />
     </div>
-  )
+  );
 }

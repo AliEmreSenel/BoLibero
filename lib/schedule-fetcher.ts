@@ -1,21 +1,25 @@
-import { getBuildingOpeningTime, getBuildingClosingTime, isBuildingOpen } from "./building-hours"
+import {
+  getBuildingOpeningTime,
+  getBuildingClosingTime,
+  isBuildingOpen,
+} from "./building-hours";
 
 interface ScheduleEvent {
-  date: string
-  start: string
-  end: string
-  type: string
-  code: string
-  class: string
-  description: string
-  teacher: string
-  room: string
+  date: string;
+  start: string;
+  end: string;
+  type: string;
+  code: string;
+  class: string;
+  description: string;
+  teacher: string;
+  room: string;
 }
 
 interface ScheduleData {
   [building: string]: {
-    [room: string]: ScheduleEvent[]
-  }
+    [room: string]: ScheduleEvent[];
+  };
 }
 
 // Building configurations with translations and visibility
@@ -274,45 +278,54 @@ const BUILDING_CONFIG = {
       "Aula N39",
     ],
   },
-}
+};
 
 // Get only visible buildings
 const BUILDINGS = Object.fromEntries(
   Object.entries(BUILDING_CONFIG)
     .filter(([, config]) => config.visible)
     .map(([key, config]) => [key, { rooms: config.rooms }]),
-)
+);
 
 // Cache for storing fetched data
-const scheduleCache = new Map<string, { data: ScheduleEvent[]; timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const scheduleCache = new Map<
+  string,
+  { data: ScheduleEvent[]; timestamp: number }
+>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Event types that indicate the room is available for general use (not occupied by a class)
-const FREE_TIME_TYPES = new Set(["Aule studio", "Studio", "Aule Studio", "AULE STUDIO", "aule studio"])
+const FREE_TIME_TYPES = new Set([
+  "Aule studio",
+  "Studio",
+  "Aule Studio",
+  "AULE STUDIO",
+  "aule studio",
+]);
 
 class ScheduleFetcher {
-  private static instance: ScheduleFetcher
-  private parser: DOMParser | null = null
+  private static instance: ScheduleFetcher;
+  private parser: DOMParser | null = null;
 
   private constructor() {
     // Only initialize DOMParser on client side
     if (typeof window !== "undefined") {
-      this.parser = new DOMParser()
+      this.parser = new DOMParser();
     }
   }
 
   static getInstance(): ScheduleFetcher {
     if (!ScheduleFetcher.instance) {
-      ScheduleFetcher.instance = new ScheduleFetcher()
+      ScheduleFetcher.instance = new ScheduleFetcher();
     }
-    return ScheduleFetcher.instance
+    return ScheduleFetcher.instance;
   }
 
   // Check if an event type indicates the room is free for general use
   private isEventTypeFreeTime(eventType: string, description = ""): boolean {
     // Check event type for study-related keywords only
-    const lowerType = eventType.toLowerCase().trim()
-    const lowerDesc = description.toLowerCase().trim()
+    const lowerType = eventType.toLowerCase().trim();
+    const lowerDesc = description.toLowerCase().trim();
 
     // Only "Aule studio" and similar study-related terms indicate free time
     return (
@@ -320,124 +333,131 @@ class ScheduleFetcher {
       lowerType.includes("aule studio") ||
       lowerType === "studio" ||
       lowerDesc.includes("aule studio")
-    )
+    );
   }
 
   // Parse room field similar to Python script logic
-  private parseRoomField(roomField: string): Array<{ roomName: string; building: string }> {
-    const results: Array<{ roomName: string; building: string }> = []
+  private parseRoomField(
+    roomField: string,
+  ): Array<{ roomName: string; building: string }> {
+    const results: Array<{ roomName: string; building: string }> = [];
 
     // Split on semicolon for multiple rooms
     const roomEntries = roomField
       .split(";")
       .map((r) => r.trim())
-      .filter((r) => r)
+      .filter((r) => r);
 
     for (const entry of roomEntries) {
       // Split on comma - format is usually: "Room, Floor/Details, Building"
-      const parts = entry.split(",").map((p) => p.trim())
+      const parts = entry.split(",").map((p) => p.trim());
 
       if (parts.length >= 2) {
-        const roomName = parts[0]
-        const building = parts[parts.length - 1] // Last part is usually the building
+        const roomName = parts[0];
+        const building = parts[parts.length - 1]; // Last part is usually the building
 
         // Only include if building is in our known buildings
         if (building in BUILDINGS) {
-          results.push({ roomName, building })
+          results.push({ roomName, building });
         }
       }
     }
 
-    return results
+    return results;
   }
 
   // Exact room matching - similar to Python script logic
   private exactRoomMatch(targetRoom: string, roomString: string): boolean {
-    const parsedRooms = this.parseRoomField(roomString)
+    const parsedRooms = this.parseRoomField(roomString);
 
     return parsedRooms.some(({ roomName }) => {
       // Exact match
       if (roomName === targetRoom) {
-        return true
+        return true;
       }
 
       // Handle cases where room might have extra spaces or formatting
-      const normalizedRoom = roomName.replace(/\s+/g, " ").trim()
-      const normalizedTarget = targetRoom.replace(/\s+/g, " ").trim()
+      const normalizedRoom = roomName.replace(/\s+/g, " ").trim();
+      const normalizedTarget = targetRoom.replace(/\s+/g, " ").trim();
 
-      return normalizedRoom === normalizedTarget
-    })
+      return normalizedRoom === normalizedTarget;
+    });
   }
 
   // Get all valid room names from our buildings list
   private getAllValidRooms(): Set<string> {
-    const validRooms = new Set<string>()
+    const validRooms = new Set<string>();
     Object.values(BUILDINGS).forEach((building) => {
       building.rooms.forEach((room) => {
-        validRooms.add(room)
-      })
-    })
-    return validRooms
+        validRooms.add(room);
+      });
+    });
+    return validRooms;
   }
 
   // Check if a room name is in our valid rooms list
   private isValidRoom(roomName: string): boolean {
-    const validRooms = this.getAllValidRooms()
-    return validRooms.has(roomName)
+    const validRooms = this.getAllValidRooms();
+    return validRooms.has(roomName);
   }
 
   // Parse HTML table similar to Python BeautifulSoup logic
   private parseHtmlTable(html: string): ScheduleEvent[] {
     // Return empty array if parser is not available (server-side)
     if (!this.parser) {
-      return []
+      return [];
     }
 
-    const doc = this.parser.parseFromString(html, "text/html")
-    const rows = Array.from(doc.querySelectorAll("table tr")).slice(1) // Skip header
-    const data: ScheduleEvent[] = []
+    const doc = this.parser.parseFromString(html, "text/html");
+    const rows = Array.from(doc.querySelectorAll("table tr")).slice(1); // Skip header
+    const data: ScheduleEvent[] = [];
 
     for (const row of rows) {
-      const cols = row.querySelectorAll("td")
-      if (!cols || cols.length < 8) continue
+      const cols = row.querySelectorAll("td");
+      if (!cols || cols.length < 8) continue;
 
       // Based on the screenshot: Data, Dalle, Alle, Tipo, Codice, Descrizione, Docenti, Aule assegnate
-      const dateStr = cols[0].textContent?.trim() || ""
-      const start = cols[1].textContent?.trim() || ""
-      const end = cols[2].textContent?.trim() || ""
-      const lessonType = cols[3].textContent?.trim() || ""
+      const dateStr = cols[0].textContent?.trim() || "";
+      const start = cols[1].textContent?.trim() || "";
+      const end = cols[2].textContent?.trim() || "";
+      const lessonType = cols[3].textContent?.trim() || "";
 
       // Handle code column with potential HTML
-      const codeHtml = cols[4]
-      const codice = codeHtml.querySelector("strong")?.textContent?.trim() || codeHtml.textContent?.trim() || ""
+      const codeHtml = cols[4];
+      const codice =
+        codeHtml.querySelector("strong")?.textContent?.trim() ||
+        codeHtml.textContent?.trim() ||
+        "";
 
       // Extract class info from code column HTML (similar to Python regex)
-      const clMatch = codeHtml.innerHTML.match(/Cl\.\d+/)
-      const classe = clMatch ? clMatch[0] : ""
+      const clMatch = codeHtml.innerHTML.match(/Cl\.\d+/);
+      const classe = clMatch ? clMatch[0] : "";
 
-      const description = cols[5].innerHTML.replace(/<br\s*\/?>/gi, " ").trim()
-      const docenti = cols[6].textContent?.trim() || ""
-      const aule = cols[7].textContent?.trim() || ""
+      const description = cols[5].innerHTML.replace(/<br\s*\/?>/gi, " ").trim();
+      const docenti = cols[6].textContent?.trim() || "";
+      const aule = cols[7].textContent?.trim() || "";
 
       // Parse room field to get individual rooms
-      const parsedRooms = this.parseRoomField(aule)
+      const parsedRooms = this.parseRoomField(aule);
 
       // Only include events for rooms that are in our valid list
-      const validRooms = parsedRooms.filter(({ roomName }) => this.isValidRoom(roomName))
+      const validRooms = parsedRooms.filter(({ roomName }) =>
+        this.isValidRoom(roomName),
+      );
 
       if (validRooms.length === 0) {
-        continue // Skip this event if no valid rooms found
+        continue; // Skip this event if no valid rooms found
       }
 
       // Convert date format from DD/MM/YYYY to YYYY-MM-DD
-      let dateObj = dateStr
+      let dateObj = dateStr;
       try {
-        const [day, month, year] = dateStr.split("/")
+        const [day, month, year] = dateStr.split("/");
         if (day && month && year) {
-          dateObj = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+          dateObj = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
         }
       } catch (error) {
-        console.warn("Date parsing error:", error)
+        console.warn("Date parsing error:", error);
       }
 
       // Create event entry
@@ -451,264 +471,309 @@ class ScheduleFetcher {
         description: description,
         teacher: docenti,
         room: aule, // Keep original room field for reference
-      })
+      });
     }
 
     return data.sort((a, b) => {
-      const dateCompare = a.date.localeCompare(b.date)
-      if (dateCompare !== 0) return dateCompare
-      return a.start.localeCompare(b.start)
-    })
+      const dateCompare = a.date.localeCompare(b.date);
+      if (dateCompare !== 0) return dateCompare;
+      return a.start.localeCompare(b.start);
+    });
   }
 
   // Fetch schedule data using our API route
-  private async fetchScheduleData(params: URLSearchParams): Promise<ScheduleEvent[]> {
+  private async fetchScheduleData(
+    params: URLSearchParams,
+  ): Promise<ScheduleEvent[]> {
     // Return empty array if running on server side
     if (typeof window === "undefined") {
-      return []
+      return [];
     }
 
     try {
       const response = await fetch(`/api/schedule?${params.toString()}`, {
         method: "GET",
         headers: {
-          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const html = await response.text()
-      return this.parseHtmlTable(html)
+      const html = await response.text();
+      return this.parseHtmlTable(html);
     } catch (error) {
-      console.error("Error fetching schedule data:", error)
-      throw new Error("Impossibile accedere ai dati di Bocconi. Riprova più tardi.")
+      console.error("Error fetching schedule data:", error);
+      throw new Error(
+        "Impossibile accedere ai dati di Bocconi. Riprova più tardi.",
+      );
     }
   }
 
   // Get cached data or fetch new data
-  private async getCachedOrFetch(cacheKey: string, params: URLSearchParams): Promise<ScheduleEvent[]> {
-    const cached = scheduleCache.get(cacheKey)
-    const now = Date.now()
+  private async getCachedOrFetch(
+    cacheKey: string,
+    params: URLSearchParams,
+  ): Promise<ScheduleEvent[]> {
+    const cached = scheduleCache.get(cacheKey);
+    const now = Date.now();
 
     if (cached && now - cached.timestamp < CACHE_DURATION) {
-      console.log("Using client cache for:", cacheKey)
-      return cached.data
+      console.log("Using client cache for:", cacheKey);
+      return cached.data;
     }
 
-    console.log("Fetching new data for:", cacheKey)
-    const data = await this.fetchScheduleData(params)
-    scheduleCache.set(cacheKey, { data, timestamp: now })
-    return data
+    console.log("Fetching new data for:", cacheKey);
+    const data = await this.fetchScheduleData(params);
+    scheduleCache.set(cacheKey, { data, timestamp: now });
+    return data;
   }
 
   // Organize schedule data by building and room - ONLY for valid rooms
   private organizeSchedule(scheduleItems: ScheduleEvent[]): ScheduleData {
     // Start with all buildings and rooms from our predefined list
-    const organized: ScheduleData = {}
+    const organized: ScheduleData = {};
 
     // Initialize all buildings and rooms with empty arrays
     Object.entries(BUILDINGS).forEach(([buildingName, { rooms }]) => {
-      organized[buildingName] = {}
+      organized[buildingName] = {};
       rooms.forEach((roomName) => {
-        organized[buildingName][roomName] = []
-      })
-    })
+        organized[buildingName][roomName] = [];
+      });
+    });
 
     // Add events only to valid rooms using exact matching
     // BUT exclude events that indicate free time
     for (const item of scheduleItems) {
       // Skip events that indicate the room is available for general use
       if (this.isEventTypeFreeTime(item.type, item.description)) {
-        continue
+        continue;
       }
 
-      const parsedRooms = this.parseRoomField(item.room)
+      const parsedRooms = this.parseRoomField(item.room);
 
       for (const { roomName, building } of parsedRooms) {
         // Only add if room is in our valid list and building exists
-        if (this.isValidRoom(roomName) && organized[building] && organized[building][roomName]) {
-          organized[building][roomName].push(item)
+        if (
+          this.isValidRoom(roomName) &&
+          organized[building] &&
+          organized[building][roomName]
+        ) {
+          organized[building][roomName].push(item);
         }
       }
     }
 
-    return organized
+    return organized;
   }
 
   private buildBocconiParams(params: {
-    startDate?: Date
-    endDate?: Date
-    room?: string
-    type?: string
+    startDate?: Date;
+    endDate?: Date;
+    room?: string;
+    type?: string;
   }): URLSearchParams {
-    const urlParams = new URLSearchParams()
+    const urlParams = new URLSearchParams();
 
     // Set default date range if not provided
-    const startDate = params.startDate || new Date()
-    const endDate = params.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+    const startDate = params.startDate || new Date();
+    const endDate =
+      params.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
     // Format dates for Bocconi API
-    urlParams.set("ric_tipo", params.type || "")
-    urlParams.set("ric_aula", params.room || "")
-    urlParams.set("ric_descriz", "")
-    urlParams.set("ric_da_gg", startDate.getDate().toString().padStart(2, "0"))
-    urlParams.set("ric_da_mm", (startDate.getMonth() + 1).toString().padStart(2, "0"))
-    urlParams.set("ric_da_aa", startDate.getFullYear().toString())
-    urlParams.set("ric_a_gg", endDate.getDate().toString().padStart(2, "0"))
-    urlParams.set("ric_a_mm", (endDate.getMonth() + 1).toString().padStart(2, "0"))
-    urlParams.set("ric_a_aa", endDate.getFullYear().toString())
-    urlParams.set("ric_da_hh", "8")
-    urlParams.set("ric_da_ii", "00")
-    urlParams.set("cerca", "CERCA")
+    urlParams.set("ric_tipo", params.type || "");
+    urlParams.set("ric_aula", params.room || "");
+    urlParams.set("ric_descriz", "");
+    urlParams.set("ric_da_gg", startDate.getDate().toString().padStart(2, "0"));
+    urlParams.set(
+      "ric_da_mm",
+      (startDate.getMonth() + 1).toString().padStart(2, "0"),
+    );
+    urlParams.set("ric_da_aa", startDate.getFullYear().toString());
+    urlParams.set("ric_a_gg", endDate.getDate().toString().padStart(2, "0"));
+    urlParams.set(
+      "ric_a_mm",
+      (endDate.getMonth() + 1).toString().padStart(2, "0"),
+    );
+    urlParams.set("ric_a_aa", endDate.getFullYear().toString());
+    urlParams.set("ric_da_hh", "8");
+    urlParams.set("ric_da_ii", "00");
+    urlParams.set("cerca", "CERCA");
 
-    return urlParams
+    return urlParams;
   }
 
   // Get free time slots for a room considering building hours
-  getFreeTimeSlots(building: string, room: string, date: Date = new Date()): Array<{ start: string; end: string }> {
-    const events = this.getCurrentScheduleData()[building]?.[room] || []
+  getFreeTimeSlots(
+    building: string,
+    room: string,
+    date: Date = new Date(),
+  ): Array<{ start: string; end: string }> {
+    const events = this.getCurrentScheduleData()[building]?.[room] || [];
 
     // Check if building is open on this date
     if (!isBuildingOpen(building, date)) {
-      return [] // Building is closed, no free slots
+      return []; // Building is closed, no free slots
     }
 
     // Get building-specific opening hours
-    const dayStart = getBuildingOpeningTime(building, date)
-    const dayEnd = getBuildingClosingTime(building, date)
+    const dayStart = getBuildingOpeningTime(building, date);
+    const dayEnd = getBuildingClosingTime(building, date);
 
-    const dateStr = date.toISOString().split("T")[0]
-    const todayEvents = events.filter((event) => event.date === dateStr).sort((a, b) => a.start.localeCompare(b.start))
+    const dateStr = date.toISOString().split("T")[0];
+    const todayEvents = events
+      .filter((event) => event.date === dateStr)
+      .sort((a, b) => a.start.localeCompare(b.start));
 
-    const freeSlots: Array<{ start: string; end: string }> = []
+    const freeSlots: Array<{ start: string; end: string }> = [];
 
     if (todayEvents.length === 0) {
-      freeSlots.push({ start: dayStart, end: dayEnd })
-      return freeSlots
+      freeSlots.push({ start: dayStart, end: dayEnd });
+      return freeSlots;
     }
 
     // Check if there's free time before first event
     if (todayEvents[0].start > dayStart) {
-      freeSlots.push({ start: dayStart, end: todayEvents[0].start })
+      if (todayEvents[0].start != "08:30")
+        freeSlots.push({ start: dayStart, end: todayEvents[0].start });
     }
 
-    // Check gaps between events
+    const toMinutes = (hhmm) => {
+      const [h, m] = hhmm.split(":").map(Number);
+      return h * 60 + m;
+    };
+
+    const MIN_GAP_MINUTES = 15; // "more than 15" → use >, not >=
+
     for (let i = 0; i < todayEvents.length - 1; i++) {
-      const currentEnd = todayEvents[i].end
-      const nextStart = todayEvents[i + 1].start
-      if (currentEnd < nextStart) {
-        freeSlots.push({ start: currentEnd, end: nextStart })
+      const currentEnd = todayEvents[i].end; // e.g., "10:15"
+      const nextStart = todayEvents[i + 1].start; // e.g., "10:30"
+      const gap = toMinutes(nextStart) - toMinutes(currentEnd);
+
+      if (gap > MIN_GAP_MINUTES) {
+        freeSlots.push({ start: currentEnd, end: nextStart });
       }
     }
-
     // Check if there's free time after last event
-    const lastEvent = todayEvents[todayEvents.length - 1]
-    if (lastEvent.end < dayEnd) {
-      freeSlots.push({ start: lastEvent.end, end: dayEnd })
+    const lastEvent = todayEvents[todayEvents.length - 1];
+    const gap = toMinutes(dayEnd) - toMinutes(lastEvent.end);
+
+    if (gap > MIN_GAP_MINUTES) {
+      freeSlots.push({ start: lastEvent.end, end: dayEnd });
     }
 
-    return freeSlots
+    return freeSlots;
   }
 
   // Store current schedule data for access by other methods
-  private currentScheduleData: ScheduleData = {}
+  private currentScheduleData: ScheduleData = {};
 
   private getCurrentScheduleData(): ScheduleData {
-    return this.currentScheduleData
+    return this.currentScheduleData;
   }
 
   // Fetch today's schedule for main page
   async fetchTodaySchedule(): Promise<ScheduleData> {
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const cacheKey = `today-${today.toISOString().split("T")[0]}`
+    const cacheKey = `today-${today.toISOString().split("T")[0]}`;
 
     const params = this.buildBocconiParams({
       startDate: today,
       endDate: tomorrow,
-    })
+    });
 
-    const scheduleItems = await this.getCachedOrFetch(cacheKey, params)
+    const scheduleItems = await this.getCachedOrFetch(cacheKey, params);
 
     // Filter only today's events
-    const todayStr = today.toISOString().split("T")[0]
-    const todayEvents = scheduleItems.filter((item) => item.date === todayStr)
+    const todayStr = today.toISOString().split("T")[0];
+    const todayEvents = scheduleItems.filter((item) => item.date === todayStr);
 
-    const organized = this.organizeSchedule(todayEvents)
-    this.currentScheduleData = organized
-    return organized
+    const organized = this.organizeSchedule(todayEvents);
+    this.currentScheduleData = organized;
+    return organized;
   }
 
   // Fetch schedule for a specific month (for room calendar view)
   async fetchMonthSchedule(year: number, month: number): Promise<ScheduleData> {
-    const startDate = new Date(year, month - 1, 1)
-    const endDate = new Date(year, month, 0) // Last day of month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0); // Last day of month
 
-    const monthKey = `${year}-${month.toString().padStart(2, "0")}`
-    const cacheKey = `month-${monthKey}`
+    const monthKey = `${year}-${month.toString().padStart(2, "0")}`;
+    const cacheKey = `month-${monthKey}`;
 
     const params = this.buildBocconiParams({
       startDate,
       endDate,
-    })
+    });
 
-    const scheduleItems = await this.getCachedOrFetch(cacheKey, params)
+    const scheduleItems = await this.getCachedOrFetch(cacheKey, params);
 
     // Filter events for the specific month
     const monthEvents = scheduleItems.filter((item) => {
-      const itemDate = new Date(item.date)
-      return itemDate.getFullYear() === year && itemDate.getMonth() === month - 1
-    })
+      const itemDate = new Date(item.date);
+      return (
+        itemDate.getFullYear() === year && itemDate.getMonth() === month - 1
+      );
+    });
 
-    const organized = this.organizeSchedule(monthEvents)
-    this.currentScheduleData = organized
-    return organized
+    const organized = this.organizeSchedule(monthEvents);
+    this.currentScheduleData = organized;
+    return organized;
   }
 
   // Fetch schedule for a specific room and date range with EXACT room matching
-  async fetchRoomSchedule(building: string, room: string, startDate: Date, endDate: Date): Promise<ScheduleEvent[]> {
-    const start = startDate.toISOString().split("T")[0]
-    const end = endDate.toISOString().split("T")[0]
-    const cacheKey = `room-${building}-${room}-${start}-${end}`
+  async fetchRoomSchedule(
+    building: string,
+    room: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<ScheduleEvent[]> {
+    const start = startDate.toISOString().split("T")[0];
+    const end = endDate.toISOString().split("T")[0];
+    const cacheKey = `room-${building}-${room}-${start}-${end}`;
 
     // Search for the specific room - send room name as search parameter
     const params = this.buildBocconiParams({
       startDate,
       endDate,
       room: room, // This will help filter on the server side
-    })
+    });
 
-    const scheduleItems = await this.getCachedOrFetch(cacheKey, params)
+    const scheduleItems = await this.getCachedOrFetch(cacheKey, params);
 
     // Filter events for the EXACT room and date range
     // BUT exclude free time events
     return scheduleItems.filter((item) => {
-      const itemDate = new Date(item.date)
-      const inDateRange = itemDate >= startDate && itemDate <= endDate
+      const itemDate = new Date(item.date);
+      const inDateRange = itemDate >= startDate && itemDate <= endDate;
 
       // Use exact room matching to avoid "Aula 1" matching "Aula 11"
-      const matchesRoom = this.exactRoomMatch(room, item.room)
+      const matchesRoom = this.exactRoomMatch(room, item.room);
 
       // Exclude free time events
-      const isNotFreeTime = !this.isEventTypeFreeTime(item.type, item.description)
+      const isNotFreeTime = !this.isEventTypeFreeTime(
+        item.type,
+        item.description,
+      );
 
-      return matchesRoom && inDateRange && isNotFreeTime
-    })
+      return matchesRoom && inDateRange && isNotFreeTime;
+    });
   }
 
   // Get all buildings and rooms structure
   getBuildingsStructure() {
-    return BUILDINGS
+    return BUILDINGS;
   }
 
   // Get building display name
   getBuildingDisplayName(buildingKey: string): string {
-    return BUILDING_CONFIG[buildingKey]?.displayName || buildingKey
+    return BUILDING_CONFIG[buildingKey]?.displayName || buildingKey;
   }
 
   // Get visible buildings with display names
@@ -717,14 +782,14 @@ class ScheduleFetcher {
       Object.entries(BUILDING_CONFIG)
         .filter(([, config]) => config.visible)
         .map(([key, config]) => [key, config.displayName]),
-    )
+    );
   }
 
   // Clear cache (useful for manual refresh)
   clearCache() {
-    scheduleCache.clear()
+    scheduleCache.clear();
   }
 }
 
-export { ScheduleFetcher, BUILDINGS, BUILDING_CONFIG }
-export type { ScheduleEvent, ScheduleData }
+export { ScheduleFetcher, BUILDINGS, BUILDING_CONFIG };
+export type { ScheduleEvent, ScheduleData };

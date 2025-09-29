@@ -1,13 +1,13 @@
-"use client"
-import { Github, ExternalLink } from "lucide-react"
-import { type Language, useTranslation } from "@/lib/i18n"
+"use client";
+import { Github, ExternalLink } from "lucide-react";
+import { type Language, useTranslation } from "@/lib/i18n";
 
 interface FooterProps {
-  language: Language
+  language: Language;
 }
 
 export function Footer({ language }: FooterProps) {
-  const t = useTranslation(language)
+  const t = useTranslation(language);
 
   return (
     <footer className="border-t bg-muted/50 mt-auto">
@@ -15,7 +15,9 @@ export function Footer({ language }: FooterProps) {
         <div className="flex flex-col items-center space-y-4 text-center">
           {/* Disclaimer */}
           <div className="max-w-2xl">
-            <p className="text-sm text-muted-foreground leading-relaxed">{t.disclaimer}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t.disclaimer}
+            </p>
           </div>
 
           {/* Author and GitHub Link */}
@@ -23,12 +25,12 @@ export function Footer({ language }: FooterProps) {
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground">{t.author}</span>
               <a
-                href="https://github.com/yourusername"
+                href="https://github.com/AliEmreSenel"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium hover:underline flex items-center gap-1"
               >
-                Your Name
+                Ali Emre Senel
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
@@ -36,7 +38,7 @@ export function Footer({ language }: FooterProps) {
             <div className="hidden sm:block text-muted-foreground">•</div>
 
             <a
-              href="https://github.com/yourusername/bspace"
+              href="https://github.com/AliEmreSenel/BSpace"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -53,5 +55,5 @@ export function Footer({ language }: FooterProps) {
         </div>
       </div>
     </footer>
-  )
+  );
 }
