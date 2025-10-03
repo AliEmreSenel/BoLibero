@@ -66,6 +66,10 @@ export default function BSpace() {
     return format(now, "HH:mm");
   };
 
+  const getFreeTimeSlots = (building: string, room: string): TimeSlot[] => {
+    return fetcher.getFreeTimeSlots(building, room, new Date());
+  };
+
   const isRoomCurrentlyFree = (building: string, room: string) => {
     const today = new Date();
 
@@ -74,29 +78,21 @@ export default function BSpace() {
       return false;
     }
 
-    const events = scheduleData[building]?.[room] || [];
     const currentTime = getCurrentTime();
     const [currentHour, currentMin] = currentTime.split(":").map(Number);
     const currentMinutes = currentHour * 60 + currentMin;
 
-    const todayEvents = events.filter((event) => {
-      const eventDate = parseISO(event.date);
-      return isToday(eventDate);
-    });
+    const todayFree = getFreeTimeSlots(building, room);
 
-    return !todayEvents.some((event) => {
+    return todayFree.some((event) => {
       const [startHour, startMin] = event.start.split(":").map(Number);
       const [endHour, endMin] = event.end.split(":").map(Number);
       const startMinutes = startHour * 60 + startMin;
       const endMinutes = endHour * 60 + endMin;
 
       // 5-minute tolerance: room is considered occupied 5 minutes before class starts
-      return currentMinutes >= startMinutes - 5 && currentMinutes <= endMinutes;
+      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     });
-  };
-
-  const getFreeTimeSlots = (building: string, room: string): TimeSlot[] => {
-    return fetcher.getFreeTimeSlots(building, room, new Date());
   };
 
   // Filter rooms based on time range
