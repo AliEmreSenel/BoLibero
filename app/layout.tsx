@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "B.Space - Room Booking",
-  description: "Find and book available rooms at Bocconi University",
+  title: "B.Space - Room Availability",
+  description: "Find available rooms at Bocconi University",
 };
 
 export default function RootLayout({
