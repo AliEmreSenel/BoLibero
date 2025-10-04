@@ -334,6 +334,16 @@ class ScheduleFetcher {
     return results;
   }
 
+  // Parse prof field similar to Python script logic
+  private parseProfField(profField: string): string[] {
+    // Split on semicolon for multiple rooms
+    const profEntries = profField
+      .split("-")
+      .map((r) => r.trim())
+      .filter((r) => r);
+
+    return profEntries;
+  }
   // Exact room matching - similar to Python script logic
   private exactRoomMatch(targetRoom: string, roomString: string): boolean {
     const parsedRooms = this.parseRoomField(roomString);
@@ -347,6 +357,24 @@ class ScheduleFetcher {
       // Handle cases where room might have extra spaces or formatting
       const normalizedRoom = roomName.replace(/\s+/g, " ").trim();
       const normalizedTarget = targetRoom.replace(/\s+/g, " ").trim();
+
+      return normalizedRoom === normalizedTarget;
+    });
+  }
+
+  // Exact room matching - similar to Python script logic
+  private exactProfMatch(targetName: string, namesString: string): boolean {
+    const parsedProfs = this.parseProfField(namesString);
+
+    return parsedProfs.some((profName) => {
+      // Exact match
+      if (profName === targetName) {
+        return true;
+      }
+
+      // Handle cases where room might have extra spaces or formatting
+      const normalizedRoom = profName.replace(/\s+/g, " ").trim();
+      const normalizedTarget = targetName.replace(/\s+/g, " ").trim();
 
       return normalizedRoom === normalizedTarget;
     });
@@ -543,6 +571,7 @@ class ScheduleFetcher {
     endDate?: Date;
     room?: string;
     type?: string;
+    prof?: string;
   }): URLSearchParams {
     const urlParams = new URLSearchParams();
 
@@ -554,7 +583,7 @@ class ScheduleFetcher {
     // Format dates for Bocconi API
     urlParams.set("ric_tipo", params.type || "");
     urlParams.set("ric_aula", params.room || "");
-    urlParams.set("ric_descriz", "");
+    urlParams.set("ric_descriz", params.prof || "");
     urlParams.set("ric_da_gg", startDate.getDate().toString().padStart(2, "0"));
     urlParams.set(
       "ric_da_mm",
@@ -731,6 +760,37 @@ class ScheduleFetcher {
       );
 
       return matchesRoom && inDateRange && isNotFreeTime;
+    });
+  }
+
+  // Fetch schedule for a specific room and date range with EXACT room matching
+  async fetchProfSchedule(
+    name: string,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<ScheduleEvent[]> {
+    const start = startDate.toISOString().split("T")[0];
+    const end = endDate.toISOString().split("T")[0];
+    const cacheKey = `room-prof-${name}-${start}-${end}`;
+
+    // Search for the specific room - send room name as search parameter
+    const params = this.buildBocconiParams({
+      startDate,
+      endDate,
+      prof: name, // This will help filter on the server side
+    });
+
+    const scheduleItems = await this.getCachedOrFetch(cacheKey, params);
+
+    // Filter events for the EXACT room and date range
+    // BUT exclude free time events
+    return scheduleItems.filter((item) => {
+      const itemDate = new Date(item.date);
+      const inDateRange = itemDate >= startDate && itemDate <= endDate;
+
+      const matchesRoom = this.exactProfMatch(name, item.teacher);
+
+      return matchesRoom && inDateRange;
     });
   }
 
