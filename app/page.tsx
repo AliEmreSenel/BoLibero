@@ -195,24 +195,6 @@ export default function BSpace() {
             </div>
           </div>
 
-          {/* Building Hours Info 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-4">{t.buildingHours}</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.entries(visibleBuildings).map(
-                ([buildingKey, displayName]) => (
-                  <BuildingHours
-                    key={buildingKey}
-                    buildingKey={buildingKey}
-                    buildingName={displayName}
-                    language={language}
-                    compact={false}
-                  />
-                ),
-              )}
-            </div>
-          </div>*/}
-
           {/* Search and Filters */}
           <Card className="mb-6">
             <CardContent className="p-6">
@@ -313,6 +295,7 @@ export default function BSpace() {
               const isFree = isRoomCurrentlyFree(building, room);
               const buildingDisplayName =
                 fetcher.getBuildingDisplayName(building);
+              const isOpen = isBuildingOpen(building, new Date());
 
               return (
                 <Card
@@ -330,47 +313,45 @@ export default function BSpace() {
                     </div>
 
                     {/* Building Status */}
-                    {!isBuildingOpen(building, new Date()) && (
+                    {!isOpen && (
                       <div className="mb-4 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
                         {t.buildingClosedToday}
                       </div>
                     )}
 
-                    {/* Free Slots Count */}
-                    <div className="mb-4">
-                      <div className="text-sm">
-                        {freeSlots.length}{" "}
-                        {freeSlots.length === 1 ? t.freeSlot : t.freeSlots}
-                      </div>
-                    </div>
+                    {isOpen && (
+                      <>
+                        {/* Time Slot Badges */}
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          {freeSlots.slice(0, 6).map((slot, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              <Clock className="h-3 w-3 mr-1" />
+                              {slot.start} - {slot.end}
+                            </Badge>
+                          ))}
+                          {freeSlots.length > 6 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{freeSlots.length - 6}
+                            </Badge>
+                          )}
+                        </div>
 
-                    {/* Time Slot Badges */}
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      {freeSlots.slice(0, 6).map((slot, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          <Clock className="h-3 w-3 mr-1" />
-                          {slot.start} - {slot.end}
-                        </Badge>
-                      ))}
-                      {freeSlots.length > 6 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{freeSlots.length - 6}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Room Status */}
-                    <div className="mb-4">
-                      <div
-                        className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
-                      >
-                        {isFree ? `✓ ${t.availableNow}` : `✗ ${t.occupiedNow}`}
-                      </div>
-                    </div>
+                        {/* Room Status */}
+                        <div className="mb-4">
+                          <div
+                            className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {isFree
+                              ? `✓ ${t.availableNow}`
+                              : `✗ ${t.occupiedNow}`}
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     {/* More Info Link */}
                     <Link

@@ -1,16 +1,15 @@
-export type Language = "en" | "it"
+export type Language = "en" | "it";
 
 export const translations = {
   en: {
     // App
     appName: "B.Space",
-    appDescription: "Find and book available rooms at Bocconi University.",
+    appDescription: "Find available classrooms at Bocconi University.",
 
     // Navigation
     availableRooms: "Available Rooms",
     allCampuses: "ALL BUILDINGS",
     allRooms: "All Rooms",
-    availableNow: "Available Now",
 
     // Search
     searchPlaceholder: "Search room number or name...",
@@ -56,7 +55,7 @@ export const translations = {
     closed: "Closed",
     open: "Open",
     buildingClosed: "Building is closed",
-    buildingClosedToday: "This building is closed today",
+    buildingClosedToday: "This classroom is closed today",
 
     // Buildings
     buildings: {
@@ -74,7 +73,7 @@ export const translations = {
   it: {
     // App
     appName: "B.Space",
-    appDescription: "Trova e prenota aule disponibili all'Università Bocconi.",
+    appDescription: "Trova aule disponibili all'Università Bocconi.",
 
     // Navigation
     availableRooms: "Aule Disponibili",
@@ -92,7 +91,6 @@ export const translations = {
     // Room info
     freeSlots: "slot liberi oggi",
     freeSlot: "slot libero oggi",
-    availableNow: "Disponibile ora",
     occupiedNow: "Occupata ora",
     moreInfo: "Maggiori info",
     capacity: "Capienza",
@@ -126,7 +124,7 @@ export const translations = {
     closed: "Chiuso",
     open: "Aperto",
     buildingClosed: "Edificio chiuso",
-    buildingClosedToday: "Questo edificio è chiuso oggi",
+    buildingClosedToday: "Questa aula è chiuso oggi",
 
     // Buildings
     buildings: {
@@ -141,16 +139,16 @@ export const translations = {
     author: "Creato da",
     githubLink: "Visualizza su GitHub",
   },
-}
+};
 
 export function getSystemLanguage(): Language {
-  if (typeof window === "undefined") return "en"
+  if (typeof window === "undefined") return "en";
 
-  const lang = navigator.language.toLowerCase()
-  if (lang.startsWith("it")) return "it"
-  return "en"
+  const lang = navigator.language.toLowerCase();
+  if (lang.startsWith("it")) return "it";
+  return "en";
 }
 
 export function useTranslation(language: Language) {
-  return translations[language]
+  return translations[language];
 }
