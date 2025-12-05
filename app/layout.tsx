@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-    title: "B.Space - Room Availability",
+    title: "BoLibero - Bocconi Study Room Finder",
     description: "Find available rooms at Bocconi University",
 };
 
