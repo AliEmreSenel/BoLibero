@@ -372,8 +372,8 @@ export default function RoomCalendar() {
                                                 </p>
                                                 <p className="text-sm text-muted-foreground">
                                                     {language === "it"
-                                                        ? "L'aula è libera tutto il giorno"
-                                                        : "The room is free all day"}
+                                                        ? "Questo professore non ha lezione oggi"
+                                                        : "This professor doesn't have class today"}
                                                 </p>
                                             </div>
                                         )}
