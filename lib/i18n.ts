@@ -66,6 +66,29 @@ export const translations = {
       Roentgen: "Via Roentgen",
     },
 
+    // Calendar
+    calendar: "Calendar",
+    selectDateToView: "Select a date to view events",
+    eventsFor: "Events for",
+    loadingEvents: "Loading events...",
+    noEventsScheduled: "No events scheduled for this date",
+    eventScheduled: "event scheduled",
+    eventsScheduled: "events scheduled",
+    eventThisMonth: "event this month",
+    eventsThisMonth: "events this month",
+    roomFreeAllDay: "The room is free all day",
+    profNoClassToday: "This professor doesn't have class today",
+    backToOverview: "Back to overview",
+    refresh: "Refresh",
+    updated: "Updated",
+
+    // Detail pages - SEO friendly content
+    roomScheduleFor: "Room Schedule for",
+    professorScheduleFor: "Schedule for Professor",
+    viewAvailability: "View real-time availability and scheduled events",
+    checkBackLater: "Check back later for updated schedules",
+    scheduleUpdatedRegularly: "Schedules are updated regularly from the university system",
+
     // Footer
     disclaimer:
       "This application is not affiliated with or endorsed by Bocconi University. It is an independent project created for educational purposes.",
@@ -137,6 +160,29 @@ export const translations = {
       Roentgen: "Via Roentgen",
     },
 
+    // Calendar
+    calendar: "Calendario",
+    selectDateToView: "Seleziona una data per visualizzare gli eventi",
+    eventsFor: "Eventi per",
+    loadingEvents: "Caricamento eventi...",
+    noEventsScheduled: "Nessun evento programmato per questa data",
+    eventScheduled: "evento programmato",
+    eventsScheduled: "eventi programmati",
+    eventThisMonth: "evento questo mese",
+    eventsThisMonth: "eventi questo mese",
+    roomFreeAllDay: "L'aula è libera tutto il giorno",
+    profNoClassToday: "Questo professore non ha lezione oggi",
+    backToOverview: "Torna alla vista generale",
+    refresh: "Aggiorna",
+    updated: "Aggiornato",
+
+    // Detail pages - SEO friendly content
+    roomScheduleFor: "Orario dell'aula",
+    professorScheduleFor: "Orario del Professore",
+    viewAvailability: "Visualizza disponibilità in tempo reale ed eventi programmati",
+    checkBackLater: "Controlla più tardi per orari aggiornati",
+    scheduleUpdatedRegularly: "Gli orari sono aggiornati regolarmente dal sistema universitario",
+
     // Footer
     disclaimer:
       "Questa applicazione non è affiliata o approvata dall'Università Bocconi. È un progetto indipendente creato per scopi educativi.",
@@ -154,5 +200,7 @@ export function getSystemLanguage(): Language {
 }
 
 export function useTranslation(language: Language) {
-    return translations[language];
+  return translations[language];
 }
+
+export type Translations = ReturnType<typeof useTranslation>;

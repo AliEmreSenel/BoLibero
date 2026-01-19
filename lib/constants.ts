@@ -241,6 +241,10 @@ export const STUDY_ROOM_TYPES = new Set([
   "Aule Studio",
   "AULE STUDIO",
   "aule studio",
+  "Aula studio",
+  "Aula Studio",
+  "AULA STUDIO",
+  "aula studio",
 ]);
 
 /**
@@ -271,7 +275,9 @@ export function isStudyRoomType(eventType: string, description = ""): boolean {
   return (
     STUDY_ROOM_TYPES.has(eventType.trim()) ||
     lowerType.includes("aule studio") ||
-    lowerDesc.includes("aule studio")
+    lowerType.includes("aula studio") ||
+    lowerDesc.includes("aule studio") ||
+    lowerDesc.includes("aula studio")
   );
 }
 

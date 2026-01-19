@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { MapPin, ArrowRight, Clock, Calendar, Search } from "lucide-react";
 import { format } from "date-fns";
-import { it, enUS } from "date-fns/locale";
-import Link from "next/link";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import type { ScheduleData } from "@/lib/schedule-fetcher";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
+import { PageLayout } from "@/components/page-layout";
+import { PageHeader } from "@/components/page-header";
+import { SearchFilters } from "@/components/search-filters";
+import { RoomCard } from "@/components/room-card";
+import {
+  PageHeaderSkeleton,
+  SearchFiltersSkeleton,
+  RoomGridSkeleton,
+} from "@/components/skeletons";
 import { type Language, useTranslation } from "@/lib/i18n";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
@@ -194,130 +194,41 @@ export default function BSpace() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar language={language} onLanguageChange={handleLanguageChange} />
-        <div className="container mx-auto p-6 flex-1">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-lg">{t.loading}</div>
-          </div>
+      <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+        <div className="container mx-auto p-6 max-w-7xl">
+          <PageHeaderSkeleton />
+          <SearchFiltersSkeleton />
+          <RoomGridSkeleton count={9} />
         </div>
-        <Footer language={language} />
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Navbar */}
-      <Navbar language={language} onLanguageChange={handleLanguageChange} />
+    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+      <div className="container mx-auto p-6 max-w-7xl">
+        {/* Page Header */}
+        <PageHeader language={language} t={t} />
 
-      <main className="flex-1">
-        <div className="container mx-auto p-6 max-w-7xl">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">{t.availableRooms}</h2>
-            <p className="text-muted-foreground text-lg">{t.appDescription}</p>
-            <div className="mt-4 flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {format(new Date(), "EEEE, MMMM do, yyyy", {
-                  locale: language === "it" ? it : enUS,
-                })}
-              </span>
-            </div>
-          </div>
-
-          {/* Search and Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t.searchPlaceholder}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-
-                {/* Start Time */}
-                <Input
-                  type="time"
-                  placeholder={t.startTime}
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
-
-                {/* End Time */}
-                <Input
-                  type="time"
-                  placeholder={t.endTime}
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                />
-
-                {/* Reset Button */}
-                <Button onClick={handleReset} variant="outline">
-                  {t.reset}
-                </Button>
-              </div>
-
-              {/* Campus Navigation */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Button
-                  variant={selectedBuilding === "all" ? "default" : "outline"}
-                  onClick={() => setSelectedBuilding("all")}
-                  className="rounded-full"
-                >
-                  {t.allCampuses}
-                </Button>
-                {Object.entries(visibleBuildings).map(
-                  ([buildingKey, displayName]) => (
-                    <Button
-                      key={buildingKey}
-                      variant={
-                        selectedBuilding === buildingKey ? "default" : "outline"
-                      }
-                      onClick={() => setSelectedBuilding(buildingKey)}
-                      className="rounded-full"
-                    >
-                      {displayName.toUpperCase()}
-                    </Button>
-                  )
-                )}
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-4">
-                  <Button
-                    variant={!showOnlyAvailable ? "default" : "ghost"}
-                    onClick={() => setShowOnlyAvailable(false)}
-                  >
-                    {t.allRooms}
-                  </Button>
-                  <Button
-                    variant={showOnlyAvailable ? "default" : "ghost"}
-                    onClick={() => setShowOnlyAvailable(true)}
-                  >
-                    {t.availableNow}
-                  </Button>
-                  <Button
-                    variant={showOnlyStudyRooms ? "default" : "ghost"}
-                    onClick={() => handleStudyRoomsChange(!showOnlyStudyRooms)}
-                  >
-                    {t.showOnlyStudyRooms}
-                  </Button>
-                </div>
-                <div className="text-muted-foreground">
-                  {filteredRooms.length}{" "}
-                  {filteredRooms.length === 1 ? t.roomFound : t.roomsFound}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Search and Filters */}
+        <SearchFilters
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          startTime={startTime}
+          setStartTime={setStartTime}
+            endTime={endTime}
+            setEndTime={setEndTime}
+            selectedBuilding={selectedBuilding}
+            setSelectedBuilding={setSelectedBuilding}
+            showOnlyAvailable={showOnlyAvailable}
+            setShowOnlyAvailable={setShowOnlyAvailable}
+            showOnlyStudyRooms={showOnlyStudyRooms}
+            onStudyRoomsChange={handleStudyRoomsChange}
+            visibleBuildings={visibleBuildings}
+            filteredCount={filteredRooms.length}
+            onReset={handleReset}
+            t={t}
+          />
 
           {/* Error Display */}
           {error && (
@@ -328,85 +239,18 @@ export default function BSpace() {
 
           {/* Room Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRooms.map(({ building, room }) => {
-              const displaySlots = getDisplayTimeSlots(building, room);
-              const isFree = isRoomCurrentlyFree(building, room);
-              const buildingDisplayName =
-                fetcher.getBuildingDisplayName(building);
-              const isOpen = isBuildingOpen(building, new Date());
-
-              return (
-                <Card
-                  key={`${building}-${room}`}
-                  className="hover:shadow-md transition-shadow"
-                >
-                  <CardContent className="p-6">
-                    {/* Room Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold">{room}</h3>
-                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                        <MapPin className="h-4 w-4" />
-                        <span>{buildingDisplayName}</span>
-                      </div>
-                    </div>
-
-                    {/* Building Status */}
-                    {!isOpen && (
-                      <div className="mb-4 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
-                        {t.buildingClosedToday}
-                      </div>
-                    )}
-
-                    {isOpen && (
-                      <>
-                        {/* Time Slot Badges */}
-                        <div className="mb-4 flex flex-wrap gap-2">
-                          {displaySlots.slice(0, 6).map((slot, index) => (
-                            <Badge
-                              key={index}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              <Clock className="h-3 w-3 mr-1" />
-                              {slot.start} - {slot.end}
-                            </Badge>
-                          ))}
-                          {displaySlots.length > 6 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{displaySlots.length - 6}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Room Status */}
-                        <div className="mb-4">
-                          <div
-                            className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
-                          >
-                            {isFree
-                              ? `✓ ${t.availableNow}`
-                              : `✗ ${t.occupiedNow}`}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* More Info Link */}
-                    <Link
-                      href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}
-                    >
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-between p-0 h-auto py-2"
-                      >
-                        <span>{t.moreInfo}</span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {filteredRooms.map(({ building, room }) => (
+              <RoomCard
+                key={`${building}-${room}`}
+                building={building}
+                room={room}
+                buildingDisplayName={fetcher.getBuildingDisplayName(building)}
+                timeSlots={getDisplayTimeSlots(building, room)}
+                isFree={isRoomCurrentlyFree(building, room)}
+                isOpen={isBuildingOpen(building, new Date())}
+                t={t}
+              />
+            ))}
           </div>
 
           {/* No Results */}
@@ -418,10 +262,6 @@ export default function BSpace() {
             </div>
           )}
         </div>
-      </main>
-
-      {/* Footer */}
-      <Footer language={language} />
-    </div>
-  );
-}
+      </PageLayout>
+    );
+  }
