@@ -1,5 +1,5 @@
-import { BUILDING_CONFIG } from '@/lib/schedule-fetcher';
-import type { MetadataRoute } from 'next'
+import { BUILDING_CONFIG } from "@/lib/constants";
+import type { MetadataRoute } from "next";
 
 
 const BASE_URL = "https://bolibero.it";

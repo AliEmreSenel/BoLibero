@@ -1,7 +1,7 @@
 // app/room/[building]/[room]/page.tsx
-import type { Metadata } from 'next'
-import RoomCalendar from './RoomCalendar'
-import { BUILDING_CONFIG } from '@/lib/schedule-fetcher'
+import type { Metadata } from "next";
+import RoomCalendar from "./RoomCalendar";
+import { BUILDING_CONFIG } from "@/lib/constants";
 
 type Props = {
     params: Promise<{ building: string, room: string }>

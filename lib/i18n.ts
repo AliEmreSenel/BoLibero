@@ -1,144 +1,148 @@
 export type Language = "en" | "it";
 
 export const translations = {
-    en: {
-        // App
-        appName: "BoLibero",
-        appDescription: "Find available classrooms at Bocconi University.",
+  en: {
+    // App
+    appName: "BoLibero",
+    appDescription: "Find available classrooms at Bocconi University.",
 
-        // Navigation
-        availableRooms: "Available Rooms",
-        allCampuses: "ALL BUILDINGS",
-        allRooms: "All Rooms",
+    // Navigation
+    availableRooms: "Available Rooms",
+    allCampuses: "ALL BUILDINGS",
+    allRooms: "All Rooms",
 
-        // Search
-        searchPlaceholder: "Search room number or name...",
-        startTime: "Start time",
-        endTime: "End time",
-        anyTime: "Any time",
-        reset: "Reset",
+    // Search
+    searchPlaceholder: "Search room number or name...",
+    startTime: "Start time",
+    endTime: "End time",
+    anyTime: "Any time",
+    reset: "Reset",
 
-        // Room info
-        freeSlots: "free slots today",
-        freeSlot: "free slot today",
-        availableNow: "Available now",
-        occupiedNow: "Occupied now",
-        moreInfo: "More info",
-        capacity: "Capacity",
-        seats: "seats",
+    // Room info
+    freeSlots: "free slots today",
+    freeSlot: "free slot today",
+    availableNow: "Available now",
+    occupiedNow: "Occupied now",
+    moreInfo: "More info",
+    capacity: "Capacity",
+    seats: "seats",
 
-        // Time
-        today: "Today",
-        roomsFound: "rooms found",
-        roomFound: "room found",
+    // Time
+    today: "Today",
+    roomsFound: "rooms found",
+    roomFound: "room found",
 
-        // Settings
-        settings: "Settings",
-        theme: "Theme",
-        language: "Language",
-        dark: "Dark",
-        light: "Light",
-        english: "English",
-        italian: "Italian",
+    // Settings
+    settings: "Settings",
+    theme: "Theme",
+    language: "Language",
+    dark: "Dark",
+    light: "Light",
+    english: "English",
+    italian: "Italian",
+    showOnlyStudyRooms: "Study rooms only",
+    studyRoomsDescription: "Show only officially designated study rooms",
 
-        // Status
-        loading: "Loading university calendar...",
-        error: "Error loading data. Please try again later.",
-        noRooms: "No rooms found",
-        noAvailableRooms: "No rooms available at the moment",
+    // Status
+    loading: "Loading university calendar...",
+    error: "Error loading data. Please try again later.",
+    noRooms: "No rooms found",
+    noAvailableRooms: "No rooms available at the moment",
 
-        // Building Hours
-        buildingHours: "Building Hours",
-        normalHours: "Normal hours",
-        specialHours: "Special hours",
-        holidayHours: "Holiday hours",
-        closed: "Closed",
-        open: "Open",
-        buildingClosed: "Building is closed",
-        buildingClosedToday: "This classroom is closed today",
+    // Building Hours
+    buildingHours: "Building Hours",
+    normalHours: "Normal hours",
+    specialHours: "Special hours",
+    holidayHours: "Holiday hours",
+    closed: "Closed",
+    open: "Open",
+    buildingClosed: "Building is closed",
+    buildingClosedToday: "This classroom is closed today",
 
-        // Buildings
-        buildings: {
-            "Sarfatti 25": "Via Sarfatti 25",
-            "Sraffa 13": "Via Sraffa 13",
-            Roentgen: "Via Roentgen",
-        },
-
-        // Footer
-        disclaimer:
-            "This application is not affiliated with or endorsed by Bocconi University. It is an independent project created for educational purposes.",
-        author: "Created by",
-        githubLink: "View on GitHub",
+    // Buildings
+    buildings: {
+      "Sarfatti 25": "Via Sarfatti 25",
+      "Sraffa 13": "Via Sraffa 13",
+      Roentgen: "Via Roentgen",
     },
-    it: {
-        // App
-        appName: "BoLibero",
-        appDescription: "Trova aule disponibili all'Università Bocconi.",
 
-        // Navigation
-        availableRooms: "Aule Disponibili",
-        allCampuses: "TUTTI I EDIFICI",
-        allRooms: "Tutte le Aule",
-        availableNow: "Disponibili Ora",
+    // Footer
+    disclaimer:
+      "This application is not affiliated with or endorsed by Bocconi University. It is an independent project created for educational purposes.",
+    author: "Created by",
+    githubLink: "View on GitHub",
+  },
+  it: {
+    // App
+    appName: "BoLibero",
+    appDescription: "Trova aule disponibili all'Università Bocconi.",
 
-        // Search
-        searchPlaceholder: "Cerca numero o nome aula...",
-        startTime: "Ora inizio",
-        endTime: "Ora fine",
-        anyTime: "Qualsiasi ora",
-        reset: "Reset",
+    // Navigation
+    availableRooms: "Aule Disponibili",
+    allCampuses: "TUTTI I EDIFICI",
+    allRooms: "Tutte le Aule",
+    availableNow: "Disponibili Ora",
 
-        // Room info
-        freeSlots: "slot liberi oggi",
-        freeSlot: "slot libero oggi",
-        occupiedNow: "Occupata ora",
-        moreInfo: "Maggiori info",
-        capacity: "Capienza",
-        seats: "posti",
+    // Search
+    searchPlaceholder: "Cerca numero o nome aula...",
+    startTime: "Ora inizio",
+    endTime: "Ora fine",
+    anyTime: "Qualsiasi ora",
+    reset: "Reset",
 
-        // Time
-        today: "Oggi",
-        roomsFound: "aule trovate",
-        roomFound: "aula trovata",
+    // Room info
+    freeSlots: "slot liberi oggi",
+    freeSlot: "slot libero oggi",
+    occupiedNow: "Occupata ora",
+    moreInfo: "Maggiori info",
+    capacity: "Capienza",
+    seats: "posti",
 
-        // Settings
-        settings: "Impostazioni",
-        theme: "Tema",
-        language: "Lingua",
-        dark: "Scuro",
-        light: "Chiaro",
-        english: "Inglese",
-        italian: "Italiano",
+    // Time
+    today: "Oggi",
+    roomsFound: "aule trovate",
+    roomFound: "aula trovata",
 
-        // Status
-        loading: "Caricamento calendario università...",
-        error: "Errore nel caricamento dei dati. Riprova più tardi.",
-        noRooms: "Nessuna aula trovata",
-        noAvailableRooms: "Nessuna aula disponibile al momento",
+    // Settings
+    settings: "Impostazioni",
+    theme: "Tema",
+    language: "Lingua",
+    dark: "Scuro",
+    light: "Chiaro",
+    english: "Inglese",
+    italian: "Italiano",
+    showOnlyStudyRooms: "Solo aule studio",
+    studyRoomsDescription: "Mostra solo aule studio ufficialmente designate",
 
-        // Building Hours
-        buildingHours: "Orari Edificio",
-        normalHours: "Orari normali",
-        specialHours: "Orari speciali",
-        holidayHours: "Orari festivi",
-        closed: "Chiuso",
-        open: "Aperto",
-        buildingClosed: "Edificio chiuso",
-        buildingClosedToday: "Questa aula è chiuso oggi",
+    // Status
+    loading: "Caricamento calendario università...",
+    error: "Errore nel caricamento dei dati. Riprova più tardi.",
+    noRooms: "Nessuna aula trovata",
+    noAvailableRooms: "Nessuna aula disponibile al momento",
 
-        // Buildings
-        buildings: {
-            "Sarfatti 25": "Via Sarfatti 25",
-            "Sraffa 13": "Via Sraffa 13",
-            Roentgen: "Via Roentgen",
-        },
+    // Building Hours
+    buildingHours: "Orari Edificio",
+    normalHours: "Orari normali",
+    specialHours: "Orari speciali",
+    holidayHours: "Orari festivi",
+    closed: "Chiuso",
+    open: "Aperto",
+    buildingClosed: "Edificio chiuso",
+    buildingClosedToday: "Questa aula è chiuso oggi",
 
-        // Footer
-        disclaimer:
-            "Questa applicazione non è affiliata o approvata dall'Università Bocconi. È un progetto indipendente creato per scopi educativi.",
-        author: "Creato da",
-        githubLink: "Visualizza su GitHub",
+    // Buildings
+    buildings: {
+      "Sarfatti 25": "Via Sarfatti 25",
+      "Sraffa 13": "Via Sraffa 13",
+      Roentgen: "Via Roentgen",
     },
+
+    // Footer
+    disclaimer:
+      "Questa applicazione non è affiliata o approvata dall'Università Bocconi. È un progetto indipendente creato per scopi educativi.",
+    author: "Creato da",
+    githubLink: "Visualizza su GitHub",
+  },
 };
 
 export function getSystemLanguage(): Language {

@@ -1,5 +1,5 @@
-"use client"
-import { Button } from "@/components/ui/button"
+"use client";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,24 +7,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Settings, Moon, Sun, Globe, Monitor } from "lucide-react"
-import { type Language, useTranslation } from "@/lib/i18n"
-import { useTheme } from "next-themes"
-import type { Theme } from "@/lib/theme"
+} from "@/components/ui/dropdown-menu";
+import { Settings, Moon, Sun, Globe, Monitor } from "lucide-react";
+import { type Language, useTranslation } from "@/lib/i18n";
+import { useTheme } from "next-themes";
+import type { Theme } from "@/lib/theme";
 
 interface SettingsMenuProps {
-  language: Language
-  onLanguageChange: (language: Language) => void
+  language: Language;
+  onLanguageChange: (language: Language) => void;
 }
 
-export function SettingsMenu({ language, onLanguageChange }: SettingsMenuProps) {
-  const t = useTranslation(language)
-  const { theme, setTheme } = useTheme()
+export function SettingsMenu({
+  language,
+  onLanguageChange,
+}: SettingsMenuProps) {
+  const t = useTranslation(language);
+  const { theme, setTheme } = useTheme();
 
   const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme)
-  }
+    setTheme(newTheme);
+  };
 
   return (
     <DropdownMenu>
@@ -38,7 +41,9 @@ export function SettingsMenu({ language, onLanguageChange }: SettingsMenuProps) 
         <DropdownMenuLabel>{t.settings}</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t.theme}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+          {t.theme}
+        </DropdownMenuLabel>
         <DropdownMenuItem onClick={() => handleThemeChange("light")}>
           <Sun className="h-4 w-4 mr-2" />
           {t.light}
@@ -57,7 +62,9 @@ export function SettingsMenu({ language, onLanguageChange }: SettingsMenuProps) 
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">{t.language}</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+          {t.language}
+        </DropdownMenuLabel>
         <DropdownMenuItem onClick={() => onLanguageChange("en")}>
           <Globe className="h-4 w-4 mr-2" />
           {t.english}
@@ -70,5 +77,5 @@ export function SettingsMenu({ language, onLanguageChange }: SettingsMenuProps) 
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

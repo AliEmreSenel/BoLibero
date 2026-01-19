@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { MapPin, ArrowRight, Clock, Calendar, Search } from "lucide-react";
-import { format, parseISO, isToday } from "date-fns";
+import { format } from "date-fns";
 import { it, enUS } from "date-fns/locale";
 import Link from "next/link";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
@@ -16,7 +16,6 @@ import { Footer } from "@/components/footer";
 import { type Language, useTranslation } from "@/lib/i18n";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
-import { BuildingHours } from "@/components/building-hours";
 
 interface TimeSlot {
   start: string;
@@ -28,6 +27,7 @@ export default function BSpace() {
   const [loading, setLoading] = useState(true);
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+  const [showOnlyStudyRooms, setShowOnlyStudyRooms] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -41,6 +41,7 @@ export default function BSpace() {
   useEffect(() => {
     const loadedSettings = loadSettings();
     setLanguage(loadedSettings.language);
+    setShowOnlyStudyRooms(loadedSettings.showOnlyStudyRooms);
   }, []);
 
   const loadTodaySchedule = async () => {
@@ -64,6 +65,17 @@ export default function BSpace() {
   const getCurrentTime = () => {
     const now = new Date();
     return format(now, "HH:mm");
+  };
+
+  /**
+   * Get time slots for a room - if showOnlyStudyRooms is enabled,
+   * returns only the official study room time slots
+   */
+  const getDisplayTimeSlots = (building: string, room: string): TimeSlot[] => {
+    if (showOnlyStudyRooms) {
+      return fetcher.getStudyRoomTimeSlots(building, room, new Date());
+    }
+    return fetcher.getFreeTimeSlots(building, room, new Date());
   };
 
   const getFreeTimeSlots = (building: string, room: string): TimeSlot[] => {
@@ -98,7 +110,7 @@ export default function BSpace() {
   // Filter rooms based on time range
   const isRoomAvailableInTimeRange = (
     building: string,
-    room: string,
+    room: string
   ): boolean => {
     if (!startTime && !endTime) return true;
 
@@ -117,7 +129,7 @@ export default function BSpace() {
 
   const visibleBuildings = fetcher.getVisibleBuildings();
   const allRooms = Object.entries(scheduleData).flatMap(([building, rooms]) =>
-    Object.keys(rooms).map((room) => ({ building, room })),
+    Object.keys(rooms).map((room) => ({ building, room }))
   );
 
   const filteredRooms = useMemo(() => {
@@ -131,9 +143,17 @@ export default function BSpace() {
       const availabilityMatch =
         !showOnlyAvailable || isRoomCurrentlyFree(building, room);
       const timeRangeMatch = isRoomAvailableInTimeRange(building, room);
+      // Filter by time slots - only show rooms that have study room time slots when enabled
+      const studyRoomMatch =
+        !showOnlyStudyRooms ||
+        fetcher.getStudyRoomTimeSlots(building, room, new Date()).length > 0;
 
       return (
-        buildingMatch && searchMatch && availabilityMatch && timeRangeMatch
+        buildingMatch &&
+        searchMatch &&
+        availabilityMatch &&
+        timeRangeMatch &&
+        studyRoomMatch
       );
     });
   }, [
@@ -141,6 +161,7 @@ export default function BSpace() {
     selectedBuilding,
     searchQuery,
     showOnlyAvailable,
+    showOnlyStudyRooms,
     startTime,
     endTime,
     scheduleData,
@@ -150,6 +171,17 @@ export default function BSpace() {
     setLanguage(newLanguage);
     const currentSettings = loadSettings();
     saveSettings({ ...currentSettings, language: newLanguage });
+  };
+
+  const handleStudyRoomsChange = async (enabled: boolean) => {
+    setShowOnlyStudyRooms(enabled);
+    const currentSettings = loadSettings();
+    saveSettings({ ...currentSettings, showOnlyStudyRooms: enabled });
+
+    // Fetch study room data if enabling the filter
+    if (enabled) {
+      await fetcher.fetchStudyRooms();
+    }
   };
 
   const handleReset = () => {
@@ -253,7 +285,7 @@ export default function BSpace() {
                     >
                       {displayName.toUpperCase()}
                     </Button>
-                  ),
+                  )
                 )}
               </div>
 
@@ -271,6 +303,12 @@ export default function BSpace() {
                     onClick={() => setShowOnlyAvailable(true)}
                   >
                     {t.availableNow}
+                  </Button>
+                  <Button
+                    variant={showOnlyStudyRooms ? "default" : "ghost"}
+                    onClick={() => handleStudyRoomsChange(!showOnlyStudyRooms)}
+                  >
+                    {t.showOnlyStudyRooms}
                   </Button>
                 </div>
                 <div className="text-muted-foreground">
@@ -291,7 +329,7 @@ export default function BSpace() {
           {/* Room Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRooms.map(({ building, room }) => {
-              const freeSlots = getFreeTimeSlots(building, room);
+              const displaySlots = getDisplayTimeSlots(building, room);
               const isFree = isRoomCurrentlyFree(building, room);
               const buildingDisplayName =
                 fetcher.getBuildingDisplayName(building);
@@ -323,7 +361,7 @@ export default function BSpace() {
                       <>
                         {/* Time Slot Badges */}
                         <div className="mb-4 flex flex-wrap gap-2">
-                          {freeSlots.slice(0, 6).map((slot, index) => (
+                          {displaySlots.slice(0, 6).map((slot, index) => (
                             <Badge
                               key={index}
                               variant="secondary"
@@ -333,9 +371,9 @@ export default function BSpace() {
                               {slot.start} - {slot.end}
                             </Badge>
                           ))}
-                          {freeSlots.length > 6 && (
+                          {displaySlots.length > 6 && (
                             <Badge variant="outline" className="text-xs">
-                              +{freeSlots.length - 6}
+                              +{displaySlots.length - 6}
                             </Badge>
                           )}
                         </div>
