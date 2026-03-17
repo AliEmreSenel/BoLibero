@@ -9,6 +9,8 @@ import type { Translations } from "@/lib/i18n";
 interface SearchFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
   startTime: string;
   setStartTime: (time: string) => void;
   endTime: string;
@@ -17,6 +19,8 @@ interface SearchFiltersProps {
   setSelectedBuilding: (building: string) => void;
   showOnlyAvailable: boolean;
   setShowOnlyAvailable: (show: boolean) => void;
+  showAvailabilityFilter: boolean;
+  availabilityFilterLabel: string;
   showOnlyStudyRooms: boolean;
   onStudyRoomsChange: (enabled: boolean) => void;
   visibleBuildings: Record<string, string>;
@@ -28,6 +32,8 @@ interface SearchFiltersProps {
 export function SearchFilters({
   searchQuery,
   setSearchQuery,
+  selectedDate,
+  setSelectedDate,
   startTime,
   setStartTime,
   endTime,
@@ -36,6 +42,8 @@ export function SearchFilters({
   setSelectedBuilding,
   showOnlyAvailable,
   setShowOnlyAvailable,
+  showAvailabilityFilter,
+  availabilityFilterLabel,
   showOnlyStudyRooms,
   onStudyRoomsChange,
   visibleBuildings,
@@ -46,38 +54,71 @@ export function SearchFilters({
   return (
     <Card className="mb-6">
       <CardContent className="p-4 sm:p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 sm:gap-4 mb-4 items-end">
           {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="space-y-1 xl:col-span-4">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t.search}
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          {/* Day */}
+          <div className="space-y-1 xl:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t.day}
+            </label>
             <Input
-              placeholder={t.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              aria-label={t.day}
             />
           </div>
 
           {/* Start Time */}
-          <Input
-            type="time"
-            placeholder={t.startTime}
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-          />
+          <div className="space-y-1 xl:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t.startTime}
+            </label>
+            <Input
+              type="time"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              aria-label={t.startTime}
+            />
+          </div>
 
           {/* End Time */}
-          <Input
-            type="time"
-            placeholder={t.endTime}
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-          />
+          <div className="space-y-1 xl:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              {t.endTime}
+            </label>
+            <Input
+              type="time"
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
+              aria-label={t.endTime}
+            />
+          </div>
 
           {/* Reset Button */}
-          <Button onClick={onReset} variant="outline">
-            {t.reset}
-          </Button>
+          <div className="space-y-1 xl:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground opacity-0">
+              {t.reset}
+            </label>
+            <Button onClick={onReset} variant="outline" className="w-full">
+              {t.reset}
+            </Button>
+          </div>
         </div>
 
         {/* Campus Navigation */}
@@ -118,14 +159,16 @@ export function SearchFilters({
             >
               {t.allRooms}
             </Button>
-            <Button
-              variant={showOnlyAvailable ? "default" : "ghost"}
-              onClick={() => setShowOnlyAvailable(true)}
-              size="sm"
-              className="text-xs sm:text-sm"
-            >
-              {t.availableNow}
-            </Button>
+            {showAvailabilityFilter && (
+              <Button
+                variant={showOnlyAvailable ? "default" : "ghost"}
+                onClick={() => setShowOnlyAvailable(true)}
+                size="sm"
+                className="text-xs sm:text-sm"
+              >
+                {availabilityFilterLabel}
+              </Button>
+            )}
             <Button
               variant={showOnlyStudyRooms ? "default" : "ghost"}
               onClick={() => onStudyRoomsChange(!showOnlyStudyRooms)}

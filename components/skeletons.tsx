@@ -48,11 +48,27 @@ export function SearchFiltersSkeleton() {
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-4 mb-4 items-end">
+          <div className="xl:col-span-4 space-y-1">
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="xl:col-span-2 space-y-1">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="xl:col-span-2 space-y-1">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="xl:col-span-2 space-y-1">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="xl:col-span-2 space-y-1">
+            <Skeleton className="h-3 w-12" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </div>
 
         {/* Campus Navigation */}

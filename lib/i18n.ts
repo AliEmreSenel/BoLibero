@@ -12,6 +12,7 @@ export const translations = {
     allRooms: "All Rooms",
 
     // Search
+    search: "Search",
     searchPlaceholder: "Search room number or name...",
     startTime: "Start time",
     endTime: "End time",
@@ -22,13 +23,17 @@ export const translations = {
     freeSlots: "free slots today",
     freeSlot: "free slot today",
     availableNow: "Available now",
+    availableAtSelectedTime: "Available at selected time",
+    availableAtThisTime: "Available at this time",
     occupiedNow: "Occupied now",
+    occupiedAtThisTime: "Occupied at this time",
     moreInfo: "More info",
     capacity: "Capacity",
     seats: "seats",
 
     // Time
     today: "Today",
+    day: "Day",
     roomsFound: "rooms found",
     roomFound: "room found",
 
@@ -48,6 +53,8 @@ export const translations = {
     error: "Error loading data. Please try again later.",
     noRooms: "No rooms found",
     noAvailableRooms: "No rooms available at the moment",
+    noRoomsAvailableAtThisTime: "No rooms available at this time",
+    futureDatesNotice: "Schedules for future dates may vary.",
 
     // Building Hours
     buildingHours: "Building Hours",
@@ -58,6 +65,7 @@ export const translations = {
     open: "Open",
     buildingClosed: "Building is closed",
     buildingClosedToday: "This classroom is closed today",
+    buildingClosedOnSelectedDate: "This classroom is closed on the selected date",
 
     // Buildings
     buildings: {
@@ -105,8 +113,11 @@ export const translations = {
     allCampuses: "TUTTI I EDIFICI",
     allRooms: "Tutte le Aule",
     availableNow: "Disponibili Ora",
+    availableAtSelectedTime: "Disponibili all'orario selezionato",
+    availableAtThisTime: "Disponibili a quest'ora",
 
     // Search
+    search: "Cerca",
     searchPlaceholder: "Cerca numero o nome aula...",
     startTime: "Ora inizio",
     endTime: "Ora fine",
@@ -117,12 +128,14 @@ export const translations = {
     freeSlots: "slot liberi oggi",
     freeSlot: "slot libero oggi",
     occupiedNow: "Occupata ora",
+    occupiedAtThisTime: "Occupata a quest'ora",
     moreInfo: "Maggiori info",
     capacity: "Capienza",
     seats: "posti",
 
     // Time
     today: "Oggi",
+    day: "Giorno",
     roomsFound: "aule trovate",
     roomFound: "aula trovata",
 
@@ -142,6 +155,8 @@ export const translations = {
     error: "Errore nel caricamento dei dati. Riprova più tardi.",
     noRooms: "Nessuna aula trovata",
     noAvailableRooms: "Nessuna aula disponibile al momento",
+    noRoomsAvailableAtThisTime: "Nessuna aula disponibile a quest'ora",
+    futureDatesNotice: "Gli orari delle date future possono variare.",
 
     // Building Hours
     buildingHours: "Orari Edificio",
@@ -152,6 +167,7 @@ export const translations = {
     open: "Aperto",
     buildingClosed: "Edificio chiuso",
     buildingClosedToday: "Questa aula è chiuso oggi",
+    buildingClosedOnSelectedDate: "Questa aula è chiusa nella data selezionata",
 
     // Buildings
     buildings: {

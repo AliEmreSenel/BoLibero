@@ -7,10 +7,11 @@ import type { Language, Translations } from "@/lib/i18n";
 
 interface PageHeaderProps {
   language: Language;
+  selectedDate: Date;
   t: Translations;
 }
 
-export function PageHeader({ language, t }: PageHeaderProps) {
+export function PageHeader({ language, selectedDate, t }: PageHeaderProps) {
   return (
     <div className="mb-8">
       <h2 className="text-3xl font-bold mb-2">{t.availableRooms}</h2>
@@ -18,7 +19,7 @@ export function PageHeader({ language, t }: PageHeaderProps) {
       <div className="mt-4 flex items-center gap-2">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span>
-          {format(new Date(), "EEEE, MMMM do, yyyy", {
+          {format(selectedDate, "EEEE, MMMM do, yyyy", {
             locale: language === "it" ? it : enUS,
           })}
         </span>

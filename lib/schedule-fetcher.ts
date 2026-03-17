@@ -50,6 +50,13 @@ class ScheduleFetcher {
   private static instance: ScheduleFetcher;
   private parser: DOMParser | null = null;
 
+  private formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   private constructor() {
     // Only initialize DOMParser on client side
     if (typeof window !== "undefined") {
@@ -362,7 +369,7 @@ class ScheduleFetcher {
     const dayStart = getBuildingOpeningTime(building, date);
     const dayEnd = getBuildingClosingTime(building, date);
 
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = this.formatDateKey(date);
     const todayEvents = events
       .filter((event) => event.date === dateStr)
       .sort((a, b) => a.start.localeCompare(b.start));
@@ -440,37 +447,56 @@ class ScheduleFetcher {
     date: Date = new Date()
   ): Array<{ start: string; end: string }> {
     // We need to get the study room events from the raw schedule data
-    return this.studyRoomSlots.get(`${building}:${room}:${date.toISOString().split("T")[0]}`) || [];
+    return this.studyRoomSlots.get(`${building}:${room}:${this.formatDateKey(date)}`) || [];
   }
 
   // Store study room slots by building:room:date
   private studyRoomSlots: Map<string, Array<{ start: string; end: string }>> = new Map();
 
-  // Fetch today's schedule for main page
-  async fetchTodaySchedule(): Promise<ScheduleData> {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  private clearStudyRoomSlotsForDate(dateKey: string): void {
+    const suffix = `:${dateKey}`;
+    for (const key of this.studyRoomSlots.keys()) {
+      if (key.endsWith(suffix)) {
+        this.studyRoomSlots.delete(key);
+      }
+    }
+  }
 
-    const cacheKey = `today-${today.toISOString().split("T")[0]}`;
+  async fetchScheduleForDate(date: Date): Promise<ScheduleData> {
+    const targetDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate()
+    );
+
+    const dateKey = this.formatDateKey(targetDate);
+    const cacheKey = `day-${dateKey}`;
 
     const params = this.buildBocconiParams({
-      startDate: today,
-      endDate: tomorrow,
+      startDate: targetDate,
+      // Bocconi search uses an inclusive date range.
+      // Set endDate to the same day to avoid fetching the next day too.
+      endDate: targetDate,
     });
 
     const scheduleItems = await this.getCachedOrFetch(cacheKey, params);
 
+    // Refresh slot cache for this date so repeated effects/fetches stay idempotent.
+    this.clearStudyRoomSlotsForDate(dateKey);
+
     // Track study rooms based on "Aule studio" type events
     this.updateStudyRooms(scheduleItems);
 
-    // Filter only today's events
-    const todayStr = today.toISOString().split("T")[0];
-    const todayEvents = scheduleItems.filter((item) => item.date === todayStr);
+    const targetDateEvents = scheduleItems.filter((item) => item.date === dateKey);
 
-    const organized = this.organizeSchedule(todayEvents);
+    const organized = this.organizeSchedule(targetDateEvents);
     this.currentScheduleData = organized;
     return organized;
+  }
+
+  // Fetch today's schedule for main page
+  async fetchTodaySchedule(): Promise<ScheduleData> {
+    return this.fetchScheduleForDate(new Date());
   }
 
   /**
@@ -487,7 +513,15 @@ class ScheduleFetcher {
             // Track the specific time slot
             const key = `${building}:${roomName}:${item.date}`;
             const existingSlots = this.studyRoomSlots.get(key) || [];
-            existingSlots.push({ start: item.start, end: item.end });
+
+            const hasSlot = existingSlots.some(
+              (slot) => slot.start === item.start && slot.end === item.end
+            );
+
+            if (!hasSlot) {
+              existingSlots.push({ start: item.start, end: item.end });
+            }
+
             this.studyRoomSlots.set(key, existingSlots);
           }
         }
@@ -613,7 +647,7 @@ class ScheduleFetcher {
     const nextMonth = new Date(today);
     nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-    const cacheKey = `study-rooms-${today.toISOString().split("T")[0]}`;
+    const cacheKey = `study-rooms-${this.formatDateKey(today)}`;
 
     // Search for study rooms using the "Aule studio" type
     const params = this.buildBocconiParams({
@@ -634,6 +668,7 @@ class ScheduleFetcher {
   clearCache() {
     scheduleCache.clear();
     this.studyRooms.clear();
+    this.studyRoomSlots.clear();
   }
 }
 

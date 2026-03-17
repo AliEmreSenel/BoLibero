@@ -19,6 +19,9 @@ interface RoomCardProps {
   timeSlots: TimeSlot[];
   isFree: boolean;
   isOpen: boolean;
+  availableStatusLabel: string;
+  occupiedStatusLabel: string;
+  buildingClosedMessage: string;
   t: Translations;
 }
 
@@ -29,6 +32,9 @@ export function RoomCard({
   timeSlots,
   isFree,
   isOpen,
+  availableStatusLabel,
+  occupiedStatusLabel,
+  buildingClosedMessage,
   t,
 }: RoomCardProps) {
   return (
@@ -48,7 +54,7 @@ export function RoomCard({
           {/* Building Status */}
           {!isOpen && (
             <div className="mb-4 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
-              {t.buildingClosedToday}
+              {buildingClosedMessage}
             </div>
           )}
 
@@ -74,7 +80,9 @@ export function RoomCard({
                 <div
                   className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
                 >
-                  {isFree ? `✓ ${t.availableNow}` : `✗ ${t.occupiedNow}`}
+                  {isFree
+                    ? `✓ ${availableStatusLabel}`
+                    : `✗ ${occupiedStatusLabel}`}
                 </div>
               </div>
             </>
