@@ -10,6 +10,8 @@ export const translations = {
     availableRooms: "Available Rooms",
     allCampuses: "ALL BUILDINGS",
     allRooms: "All Rooms",
+    navigation: "Main navigation",
+    classCalendarNav: "Class Calendar",
 
     // Search
     search: "Search",
@@ -97,6 +99,33 @@ export const translations = {
     checkBackLater: "Check back later for updated schedules",
     scheduleUpdatedRegularly: "Schedules are updated regularly from the university system",
 
+    // Class subscription calendar
+    classCalendarTitle: "Build your class calendar",
+    classCalendarDescription:
+      "Choose your classes once and subscribe to an automatically updated calendar. No account required.",
+    chooseClasses: "Choose classes",
+    chooseClassesDescription:
+      "Search by course name, code, or class number and add up to 20 classes.",
+    classSearchPlaceholder: "Search classes, e.g. 20127 or Corporate Finance...",
+    loadingClasses: "Loading classes...",
+    noClassesFound: "No matching classes found",
+    classCatalogError: "The class catalog could not be loaded. Please try again later.",
+    yourBundle: "Your bundle",
+    yourBundleDescription: "These classes will appear in one calendar.",
+    emptyBundle: "Select classes from the list to start your bundle.",
+    removeClass: "Remove class",
+    subscribeCalendar: "Subscribe",
+    subscribeDescription:
+      "Your calendar app will keep this schedule in sync automatically.",
+    openCalendarApp: "Add subscription calendar",
+    copySubscriptionUrl: "Copy subscription URL",
+    copied: "Copied",
+    previewCalendarFeed: "Preview calendar feed",
+    calendarCoverage:
+      "The feed includes six months of history and up to one year of published future classes.",
+    subscriptionHelp:
+      "For Google Calendar, copy the URL and use Other calendars → From URL. Apple Calendar and Outlook can open it directly.",
+
     // Footer
     disclaimer:
       "This application is not affiliated with or endorsed by Bocconi University. It is an independent project created for educational purposes.",
@@ -112,6 +141,8 @@ export const translations = {
     availableRooms: "Aule Disponibili",
     allCampuses: "TUTTI I EDIFICI",
     allRooms: "Tutte le Aule",
+    navigation: "Navigazione principale",
+    classCalendarNav: "Calendario Lezioni",
     availableNow: "Disponibili Ora",
     availableAtSelectedTime: "Disponibili all'orario selezionato",
     availableAtThisTime: "Disponibili a quest'ora",
@@ -198,6 +229,33 @@ export const translations = {
     viewAvailability: "Visualizza disponibilità in tempo reale ed eventi programmati",
     checkBackLater: "Controlla più tardi per orari aggiornati",
     scheduleUpdatedRegularly: "Gli orari sono aggiornati regolarmente dal sistema universitario",
+
+    // Class subscription calendar
+    classCalendarTitle: "Crea il tuo calendario delle lezioni",
+    classCalendarDescription:
+      "Scegli le tue lezioni e iscriviti a un calendario aggiornato automaticamente. Non serve un account.",
+    chooseClasses: "Scegli le lezioni",
+    chooseClassesDescription:
+      "Cerca per nome, codice o numero di classe e aggiungi fino a 20 lezioni.",
+    classSearchPlaceholder: "Cerca lezioni, es. 20127 o Corporate Finance...",
+    loadingClasses: "Caricamento lezioni...",
+    noClassesFound: "Nessuna lezione corrispondente",
+    classCatalogError: "Impossibile caricare l'elenco delle lezioni. Riprova più tardi.",
+    yourBundle: "Il tuo gruppo",
+    yourBundleDescription: "Queste lezioni appariranno in un unico calendario.",
+    emptyBundle: "Seleziona le lezioni dall'elenco per iniziare.",
+    removeClass: "Rimuovi lezione",
+    subscribeCalendar: "Iscriviti",
+    subscribeDescription:
+      "L'app calendario manterrà automaticamente sincronizzato questo orario.",
+    openCalendarApp: "Aggiungi calendario in abbonamento",
+    copySubscriptionUrl: "Copia URL di iscrizione",
+    copied: "Copiato",
+    previewCalendarFeed: "Anteprima del calendario",
+    calendarCoverage:
+      "Il calendario include sei mesi di storico e fino a un anno di lezioni future già pubblicate.",
+    subscriptionHelp:
+      "Per Google Calendar, copia l'URL e usa Altri calendari → Da URL. Apple Calendar e Outlook possono aprirlo direttamente.",
 
     // Footer
     disclaimer:

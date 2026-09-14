@@ -22,6 +22,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'daily',
             priority: 1,
         },
+        {
+            url: `${BASE_URL}/calendar`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.9,
+        },
     ]
 
     const roomEntries: MetadataRoute.Sitemap = Object.entries(BUILDING_CONFIG)
