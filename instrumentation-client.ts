@@ -4,8 +4,40 @@
 
 import * as Sentry from "@sentry/nextjs";
 
+function encodeEnvelope(envelope: string | Uint8Array) {
+    const bytes = typeof envelope === "string"
+        ? new TextEncoder().encode(envelope)
+        : envelope;
+    let binary = "";
+
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+
+    return btoa(binary);
+}
+
+function makeOpaqueTransport(options: Parameters<typeof Sentry.createTransport>[0]) {
+    return Sentry.createTransport(options, async ({ body }) => {
+        const response = await fetch("/api/client-events", {
+            method: "POST",
+            headers: { "content-type": "text/plain" },
+            body: encodeEnvelope(body),
+        });
+
+        return {
+            statusCode: response.status,
+            headers: {
+                "x-sentry-rate-limits": response.headers.get("x-sentry-rate-limits"),
+                "retry-after": response.headers.get("retry-after"),
+            },
+        };
+    });
+}
+
 Sentry.init({
     dsn: "https://0bbc394747dec3e3ac0609076b53bb78@o4509701983174656.ingest.de.sentry.io/4510102691381328",
+    transport: makeOpaqueTransport,
 
     // Add optional integrations for additional features
     integrations: [
