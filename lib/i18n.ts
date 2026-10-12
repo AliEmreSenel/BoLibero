@@ -15,7 +15,7 @@ export const translations = {
 
     // Search
     search: "Search",
-    searchPlaceholder: "Search room number or name...",
+    searchPlaceholder: "Aula 1, Leoni, Velodromo…",
     startTime: "Start time",
     endTime: "End time",
     anyTime: "Any time",
@@ -154,7 +154,7 @@ export const translations = {
 
     // Search
     search: "Cerca",
-    searchPlaceholder: "Cerca numero o nome aula...",
+    searchPlaceholder: "Aula 1, Leoni, Velodromo…",
     startTime: "Ora inizio",
     endTime: "Ora fine",
     anyTime: "Qualsiasi ora",
