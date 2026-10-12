@@ -13,8 +13,17 @@ import { loadSettings, saveSettings } from "@/lib/settings";
 
 export default function RoomCalendar() {
   const params = useParams();
-  const building = decodeURIComponent(params.building as string);
-  const room = decodeURIComponent(params.room as string);
+  const rawBuilding = Array.isArray(params.building) ? params.building[0] : (params.building as string);
+  const rawRoom = Array.isArray(params.room) ? params.room[0] : (params.room as string);
+  const decode = (value: string) => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
+  const building = decode(rawBuilding);
+  const room = decode(rawRoom);
 
   const [roomEvents, setRoomEvents] = useState<ScheduleEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
