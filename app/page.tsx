@@ -16,6 +16,7 @@ import {
 import { type Language, useTranslation } from "@/lib/i18n";
 import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
+import { getBuildingDisplayName } from "@/lib/constants";
 import { romeDateKey, romeMinutes } from "@/lib/time";
 
 interface TimeSlot {
@@ -217,7 +218,11 @@ export default function BSpace() {
       const searchMatch =
         !searchQuery ||
         room.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.toLowerCase().includes(searchQuery.toLowerCase());
+        building.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        // Students search "Leoni"/"Velodromo", not the internal building keys.
+        getBuildingDisplayName(building)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
       const availabilityMatch =
         !showAvailabilityFilter ||
         !showOnlyAvailable ||
