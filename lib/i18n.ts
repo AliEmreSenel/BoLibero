@@ -150,6 +150,26 @@ export const translations = {
       "Changed your classes? Copy the URL and subscribe again — most apps keep the old bundle until you re-subscribe.",
     classNo: "Class no.",
     dataSourceLine: "Data: didattica.unibocconi.it · updated",
+    contact: "Contact",
+    privacy: "Privacy",
+
+    // Privacy policy
+    privacyTitle: "Privacy Policy",
+    privacyUpdated: "Last updated: October 2026",
+    privacyIntro:
+      "BoLibero is an unofficial, open-source tool for Bocconi students. It collects as little data as possible: there are no accounts, no tracking cookies and no ads.",
+    privacyScrapedTitle: "Scraped schedule data",
+    privacyScraped:
+      "We read the public Bocconi University timetable (didattica.unibocconi.it) to show room availability and class schedules. The data belongs to the university and can change at any time; no personal data of students, professors or staff is stored by us.",
+    privacyLocalStorageTitle: "Your device (localStorage)",
+    privacyLocalStorage:
+      "Your language, theme, room filters and calendar class bundle are stored in your browser's localStorage. They never leave your device and are deleted when you clear your browser data.",
+    privacySentryTitle: "Error telemetry (Sentry)",
+    privacySentry:
+      "When the app hits a runtime error, technical details (error message, stack trace, browser and page URL) are sent to Sentry so we can fix bugs. No names, classes, cookies or browsing history are sent.",
+    privacyContactTitle: "Contact",
+    privacyContact:
+      "Questions, data removal requests and bug reports: open an issue on our GitHub repository.",
 
     // Footer
     disclaimer:
@@ -303,6 +323,26 @@ export const translations = {
       "Hai cambiato le tue lezioni? Copia di nuovo l'URL e iscriviti di nuovo — la maggior parte delle app mantiene il vecchio gruppo finché non ti riscrivi.",
     classNo: "Cl. n.",
     dataSourceLine: "Dati: didattica.unibocconi.it · aggiornati alle",
+    contact: "Contatti",
+    privacy: "Privacy",
+
+    // Privacy policy
+    privacyTitle: "Informativa sulla privacy",
+    privacyUpdated: "Ultimo aggiornamento: ottobre 2026",
+    privacyIntro:
+      "BoLibero è uno strumento non ufficiale e open-source per gli studenti Bocconi. Raccoglie il minimo possibile: niente account, niente cookie di tracciamento, niente pubblicità.",
+    privacyScrapedTitle: "Dati orari raccolti",
+    privacyScraped:
+      "Leggiamo l'orario pubblico dell'Università Bocconi (didattica.unibocconi.it) per mostrare la disponibilità delle aule e gli orari delle lezioni. I dati appartengono all'università e possono cambiare in qualsiasi momento; non archiviamo dati personali di studenti, professori o personale.",
+    privacyLocalStorageTitle: "Il tuo dispositivo (localStorage)",
+    privacyLocalStorage:
+      "Lingua, tema, filtri sulle aule e il gruppo di lezioni del calendario sono salvati nel localStorage del tuo browser. Non lasciano mai il dispositivo e si cancellano svuotando i dati del browser.",
+    privacySentryTitle: "Telemetria degli errori (Sentry)",
+    privacySentry:
+      "Quando l'app incontra un errore, i dettagli tecnici (messaggio, stack trace, browser e URL della pagina) vengono inviati a Sentry per correggere i bug. Non vengono inviati nomi, corsi, cookie o cronologia di navigazione.",
+    privacyContactTitle: "Contatti",
+    privacyContact:
+      "Domande, richieste di cancellazione dati e segnalazioni: apri una issue sul nostro repository GitHub.",
 
     // Footer
     disclaimer:

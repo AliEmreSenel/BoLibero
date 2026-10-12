@@ -37,6 +37,25 @@ export function Footer({ language }: FooterProps) {
 
             <div className="hidden sm:block text-muted-foreground">•</div>
 
+            <div className="flex items-center gap-4">
+              <a
+                href="/privacy-policy"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.privacy}
+              </a>
+              <a
+                href="https://github.com/AliEmreSenel/BSpace/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.contact}
+              </a>
+            </div>
+
+            <div className="hidden sm:block text-muted-foreground">•</div>
+
             <a
               href="https://github.com/AliEmreSenel/BSpace"
               target="_blank"
