@@ -106,6 +106,7 @@ export default function ProfessorCalendar() {
           showRoomInEvents={true}
           showTeachersInEvents={false}
           emptyStateMessage={t.profNoClassToday}
+          failed={Boolean(error)}
         />
       </div>
     </PageLayout>

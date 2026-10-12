@@ -57,6 +57,7 @@ export const translations = {
     noAvailableRooms: "No rooms available at the moment",
     noRoomsAvailableAtThisTime: "No rooms available at this time",
     futureDatesNotice: "Schedules for future dates may vary.",
+    noDataForDate: "No schedule data received for this date. The grid is hidden so it can't be mistaken for availability.",
 
     // Building Hours
     buildingHours: "Building Hours",
@@ -86,8 +87,8 @@ export const translations = {
     eventsScheduled: "events scheduled",
     eventThisMonth: "event this month",
     eventsThisMonth: "events this month",
-    roomFreeAllDay: "The room is free all day",
-    profNoClassToday: "This professor doesn't have class today",
+    roomFreeAllDay: "No classes published for this day",
+    profNoClassToday: "No classes published for this professor on this day",
     backToOverview: "Back to overview",
     refresh: "Refresh",
     updated: "Updated",
@@ -188,6 +189,7 @@ export const translations = {
     noAvailableRooms: "Nessuna aula disponibile al momento",
     noRoomsAvailableAtThisTime: "Nessuna aula disponibile a quest'ora",
     futureDatesNotice: "Gli orari delle date future possono variare.",
+    noDataForDate: "Nessun dato di orario ricevuto per questa data. La griglia è nascosta per non essere scambiata per disponibilità.",
 
     // Building Hours
     buildingHours: "Orari Edificio",
@@ -217,8 +219,8 @@ export const translations = {
     eventsScheduled: "eventi programmati",
     eventThisMonth: "evento questo mese",
     eventsThisMonth: "eventi questo mese",
-    roomFreeAllDay: "L'aula è libera tutto il giorno",
-    profNoClassToday: "Questo professore non ha lezione oggi",
+    roomFreeAllDay: "Nessun orario pubblicato per questo giorno",
+    profNoClassToday: "Nessuna lezione pubblicata per questo professore in questo giorno",
     backToOverview: "Torna alla vista generale",
     refresh: "Aggiorna",
     updated: "Aggiornato",
