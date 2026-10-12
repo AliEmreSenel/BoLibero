@@ -16,6 +16,7 @@ export const translations = {
     // Search
     search: "Search",
     searchPlaceholder: "Aula 1, Leoni, Velodromo…",
+    timeRangeHint: "Shows rooms free for the whole time range — leave the times empty to see all.",
     startTime: "Start time",
     endTime: "End time",
     anyTime: "Any time",
@@ -155,6 +156,7 @@ export const translations = {
     // Search
     search: "Cerca",
     searchPlaceholder: "Aula 1, Leoni, Velodromo…",
+    timeRangeHint: "Mostra le aule libere per tutta la fascia oraria — lascia gli orari vuoti per vederle tutte.",
     startTime: "Ora inizio",
     endTime: "Ora fine",
     anyTime: "Qualsiasi ora",

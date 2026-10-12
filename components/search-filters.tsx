@@ -20,11 +20,12 @@ interface SearchFiltersProps {
   showOnlyAvailable: boolean;
   setShowOnlyAvailable: (show: boolean) => void;
   showAvailabilityFilter: boolean;
+  availabilityDisabled: boolean;
   availabilityFilterLabel: string;
   showOnlyStudyRooms: boolean;
   onStudyRoomsChange: (enabled: boolean) => void;
   visibleBuildings: Record<string, string>;
-  filteredCount: number;
+  filteredCount: string;
   minDate: string;
   maxDate: string;
   onReset: () => void;
@@ -46,6 +47,7 @@ export function SearchFilters({
   showOnlyAvailable,
   setShowOnlyAvailable,
   showAvailabilityFilter,
+  availabilityDisabled,
   availabilityFilterLabel,
   showOnlyStudyRooms,
   onStudyRoomsChange,
@@ -144,6 +146,12 @@ export function SearchFilters({
           </div>
         </div>
 
+        {(startTime || endTime) && (
+          <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+            {t.timeRangeHint}
+          </p>
+        )}
+
         {/* Campus Navigation */}
         <div className="flex flex-wrap gap-2 mb-4">
           <Button
@@ -161,7 +169,11 @@ export function SearchFilters({
                 variant={
                   selectedBuilding === buildingKey ? "default" : "outline"
                 }
-                onClick={() => setSelectedBuilding(buildingKey)}
+                onClick={() =>
+                  setSelectedBuilding(
+                    selectedBuilding === buildingKey ? "all" : buildingKey
+                  )
+                }
                 className="rounded-full text-xs sm:text-sm"
                 size="sm"
               >
@@ -184,8 +196,10 @@ export function SearchFilters({
             </Button>
             {showAvailabilityFilter && (
               <Button
-                variant={showOnlyAvailable ? "default" : "ghost"}
+                variant={showOnlyAvailable && !availabilityDisabled ? "default" : "ghost"}
                 onClick={() => setShowOnlyAvailable(true)}
+                disabled={availabilityDisabled}
+                title={availabilityDisabled ? t.futureDatesNotice : undefined}
                 size="sm"
                 className="text-xs sm:text-sm"
               >
@@ -202,7 +216,7 @@ export function SearchFilters({
             </Button>
           </div>
           <div className="text-sm text-muted-foreground whitespace-nowrap">
-            {filteredCount} {filteredCount === 1 ? t.roomFound : t.roomsFound}
+            {filteredCount} {filteredCount === "1" ? t.roomFound : t.roomsFound}
           </div>
         </div>
       </CardContent>

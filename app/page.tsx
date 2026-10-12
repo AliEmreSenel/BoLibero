@@ -69,12 +69,11 @@ export default function BSpace() {
   const isSelectedDateToday = selectedDate === todayDateValue;
   const isFutureDate = selectedDate > todayDateValue;
   const isPastDate = selectedDate < todayDateValue;
-  // Present-tense availability only describes today; on other dates the card
-  // badges would assert a "now" that is already fixed in the past.
-  const showAvailabilityFilter = isSelectedDateToday;
-  const availabilityFilterLabel = isSelectedDateToday
-    ? t.availableNow
-    : t.availableAtSelectedTime;
+  // Present-tense availability only describes today; on other dates the button
+  // stays visible-disabled with an explanation.
+  const showAvailabilityFilter = !isPastDate;
+  const availabilityActive = showOnlyAvailable && isSelectedDateToday;
+  const availabilityFilterLabel = t.availableNow;
   const availabilityStatusLabel = isSelectedDateToday
     ? t.availableNow
     : t.availableAtThisTime;
@@ -226,9 +225,7 @@ export default function BSpace() {
           .toLowerCase()
           .includes(searchQuery.toLowerCase());
       const availabilityMatch =
-        !showAvailabilityFilter ||
-        !showOnlyAvailable ||
-        isRoomCurrentlyFree(building, room);
+        !availabilityActive || isRoomCurrentlyFree(building, room);
       const timeRangeMatch = isRoomAvailableInTimeRange(building, room);
       // Filter by time slots - only show rooms that have study room time slots when enabled
       const studyRoomMatch =
@@ -248,8 +245,7 @@ export default function BSpace() {
     allRooms,
     selectedBuilding,
     searchQuery,
-    showOnlyAvailable,
-    showAvailabilityFilter,
+    availabilityActive,
     showOnlyStudyRooms,
     startTime,
     endTime,
@@ -258,7 +254,9 @@ export default function BSpace() {
     nowTick,
   ]);
 
-  const displayedFilteredCount = isRefreshing ? 0 : filteredRooms.length;
+  const displayedFilteredCount = isRefreshing
+    ? "—"
+    : String(filteredRooms.length);
 
   // A scrape that returns zero events campus-wide means "no data", not "all
   // rooms free". Rendering the full grid in that case shows every room with a
@@ -291,7 +289,7 @@ export default function BSpace() {
     searchQuery !== "" ||
     selectedDate !== todayDateValue ||
     selectedBuilding !== "all" ||
-    showOnlyAvailable ||
+    availabilityActive ||
     showOnlyStudyRooms ||
     startTime !== "" ||
     endTime !== "";
@@ -341,6 +339,7 @@ export default function BSpace() {
           showOnlyAvailable={showOnlyAvailable}
           setShowOnlyAvailable={setShowOnlyAvailable}
           showAvailabilityFilter={showAvailabilityFilter}
+          availabilityDisabled={!isSelectedDateToday}
           availabilityFilterLabel={availabilityFilterLabel}
           showOnlyStudyRooms={showOnlyStudyRooms}
           onStudyRoomsChange={handleStudyRoomsChange}
@@ -422,7 +421,7 @@ export default function BSpace() {
         {filteredRooms.length === 0 && !error && !isInitialLoading && !isRefreshing && (
           <div className="text-center py-12">
             <div className="text-muted-foreground text-lg">
-              {showOnlyAvailable && showAvailabilityFilter
+              {availabilityActive
                 ? noAvailabilityMessage
                 : t.noRooms}
             </div>
