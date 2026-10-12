@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { useParams } from "next/navigation";
-import { ScheduleFetcher } from "@/lib/schedule-fetcher";
-import type { ScheduleEvent } from "@/lib/schedule-fetcher";
+import { getBuildingDisplayName } from "@/lib/constants";
+import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
 import { DetailHeader } from "@/components/detail-header";
 import { CalendarView } from "@/components/calendar-view";
@@ -25,7 +25,7 @@ export default function RoomCalendar() {
   const building = decode(rawBuilding);
   const room = decode(rawRoom);
 
-  const [roomEvents, setRoomEvents] = useState<ScheduleEvent[]>([]);
+  const [roomEvents, setRoomEvents] = useState<ClientEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,6 @@ export default function RoomCalendar() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [language, setLanguage] = useState<Language>("en");
 
-  const fetcher = ScheduleFetcher.getInstance();
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -45,15 +44,15 @@ export default function RoomCalendar() {
     setLoading(true);
     setError(null);
     try {
-      const startDate = startOfMonth(month);
-      const endDate = endOfMonth(month);
-      const events = await fetcher.fetchRoomSchedule(
-        building,
-        room,
-        startDate,
-        endDate
-      );
-      setRoomEvents(events);
+      const from = startOfMonth(month).toISOString().split("T")[0];
+      const to = endOfMonth(month).toISOString().split("T")[0];
+      const query = new URLSearchParams({ room, building, from, to });
+      const response = await fetch(`/api/events?${query.toString()}`);
+      if (!response.ok) {
+        throw new Error(`events API returned ${response.status}`);
+      }
+      const data = (await response.json()) as { events: ClientEvent[] };
+      setRoomEvents(data.events);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error loading room schedule:", err);
@@ -77,7 +76,6 @@ export default function RoomCalendar() {
   };
 
   const handleRefresh = () => {
-    fetcher.clearCache();
     loadMonthSchedule(currentMonth);
   };
 
@@ -92,7 +90,7 @@ export default function RoomCalendar() {
       <div className="container mx-auto p-6 max-w-7xl">
         <DetailHeader
           title={room}
-          subtitle={fetcher.getBuildingDisplayName(building)}
+          subtitle={getBuildingDisplayName(building)}
           description={t.viewAvailability}
           eventCount={roomEvents.length}
           lastUpdated={lastUpdated}
