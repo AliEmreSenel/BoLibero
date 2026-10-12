@@ -17,3 +17,27 @@ export const toMinutes = (hhmm: string): number => {
 
 export const minutesToTime = (total: number): string =>
   `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+
+// All schedule data is Italian; "today" and "now" must mean Rome, not the
+// visitor's device timezone.
+const romeFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Rome",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export const romeDateKey = (date: Date = new Date()): string =>
+  romeFormatter.format(date);
+
+const romeTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Rome",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+export const romeMinutes = (date: Date = new Date()): number => {
+  const [hours, minutes] = romeTimeFormatter.format(date).split(":").map(Number);
+  return hours * 60 + minutes;
+};

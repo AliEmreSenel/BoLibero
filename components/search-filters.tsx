@@ -25,6 +25,8 @@ interface SearchFiltersProps {
   onStudyRoomsChange: (enabled: boolean) => void;
   visibleBuildings: Record<string, string>;
   filteredCount: number;
+  minDate: string;
+  maxDate: string;
   onReset: () => void;
   t: Translations;
 }
@@ -48,6 +50,8 @@ export function SearchFilters({
   onStudyRoomsChange,
   visibleBuildings,
   filteredCount,
+  minDate,
+  maxDate,
   onReset,
   t,
 }: SearchFiltersProps) {
@@ -80,6 +84,8 @@ export function SearchFilters({
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
+              min={minDate}
+              max={maxDate}
               aria-label={t.day}
             />
           </div>
