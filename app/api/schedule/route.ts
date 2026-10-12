@@ -2,48 +2,45 @@ import { type NextRequest, NextResponse } from "next/server"
 import * as Sentry from "@sentry/nextjs"
 import { UPSTREAM_TIMEOUT_MS } from "@/lib/bocconi-calendar"
 
-// In-memory cache for server-side caching
-const cache = new Map<string, { data: string; timestamp: number }>()
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
-
 // A real schedule page is a dense table of 150-400 KB. A maintenance page,
 // login wall, or error wall is only a few KB. Treating anything below this
 // floor as a failure stops "upstream returned an empty page" from being
 // cached as success and shown to students as "no rooms".
 const MIN_REAL_PAGE_BYTES = 10_000
 
+// Only the query parameters the app itself sends are forwarded. This turns the
+// route from an open scraping relay into a bounded proxy.
+const ALLOWED_PARAMS = [
+  "ric_tipo",
+  "ric_aula",
+  "ric_descriz",
+  "ric_da_gg",
+  "ric_da_mm",
+  "ric_da_aa",
+  "ric_da_hh",
+  "ric_da_ii",
+  "ric_a_gg",
+  "ric_a_mm",
+  "ric_a_aa",
+  "cerca",
+]
+
+// Five-minute freshness is the product promise. A per-instance in-memory Map
+// cannot keep that promise on serverless (cold starts, per-isolate), so the
+// CDN enforces it: every distinct query hits origin at most once per 5 minutes
+// globally, and serves stale for a day while refreshing.
+const CACHE_CONTROL = "public, s-maxage=300, stale-while-revalidate=86400"
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
 
-  // Create cache key from search parameters
-  const cacheKey = searchParams.toString()
-  const now = Date.now()
-
-  // Check cache first
-  const cached = cache.get(cacheKey)
-  if (cached && now - cached.timestamp < CACHE_DURATION) {
-    console.log("Returning cached data for:", cacheKey)
-    return new NextResponse(cached.data, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "X-Cache": "HIT",
-      },
-    })
-  }
-
-  // Build the Bocconi URL with parameters
   const bocconiUrl = new URL("https://didattica.unibocconi.it/aule/lista_orario.php")
-
-  // Copy all search parameters
-  searchParams.forEach((value, key) => {
-    bocconiUrl.searchParams.set(key, value)
-  })
-
-  console.log("Fetching from Bocconi:", bocconiUrl.toString())
+  for (const key of ALLOWED_PARAMS) {
+    const value = searchParams.get(key)
+    if (value !== null) {
+      bocconiUrl.searchParams.set(key, value)
+    }
+  }
 
   try {
     const response = await fetch(bocconiUrl.toString(), {
@@ -58,6 +55,7 @@ export async function GET(request: NextRequest) {
         Connection: "keep-alive",
         "Upgrade-Insecure-Requests": "1",
       },
+      next: { revalidate: 300 },
     })
 
     if (!response.ok) {
@@ -71,23 +69,11 @@ export async function GET(request: NextRequest) {
       throw new Error(`Upstream page too small (${html.length} bytes)`)
     }
 
-    // Cache the response
-    cache.set(cacheKey, { data: html, timestamp: now })
-
-    // Clean up old cache entries (simple cleanup)
-    if (cache.size > 100) {
-      const oldestKey = cache.keys().next().value
-      if (oldestKey) cache.delete(oldestKey)
-    }
-
     return new NextResponse(html, {
       status: 200,
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "X-Cache": "MISS",
+        "Cache-Control": CACHE_CONTROL,
       },
     })
   } catch (error) {
@@ -95,24 +81,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { error: "Failed to fetch schedule data" },
       {
-        status: 500,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
+        status: 502,
+        headers: { "Cache-Control": "no-store" },
       },
     )
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  })
 }
