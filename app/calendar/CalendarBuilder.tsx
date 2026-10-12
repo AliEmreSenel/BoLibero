@@ -201,7 +201,7 @@ export default function CalendarBuilder() {
                   </Button>
                 </div>
               ) : (
-                <div className="max-h-[560px] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-none space-y-2 pr-1 lg:max-h-[560px] lg:overflow-y-auto">
                   {visibleClasses.map((item) => {
                     const isSelected = selectedIds.has(item.id);
                     const isDisabled = !isSelected && capReached;
