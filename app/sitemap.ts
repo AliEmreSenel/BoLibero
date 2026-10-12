@@ -1,8 +1,6 @@
 import { BUILDING_CONFIG } from "@/lib/constants";
+import { SITE_URL as BASE_URL } from "@/lib/site";
 import type { MetadataRoute } from "next";
-
-
-const BASE_URL = "https://bolibero.it";
 
 function roomUrl(building: string, room: string) {
     // Use encodeURIComponent so it matches your [building]/[room] dynamic segments

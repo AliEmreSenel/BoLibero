@@ -226,6 +226,10 @@ export const BUILDINGS = Object.fromEntries(
     .map(([key, config]) => [key, { rooms: config.rooms }])
 );
 
+// Shared by the /calendar builder UI and the /api/calendar.ics route so the
+// advertised cap and the enforced cap can never diverge.
+export const MAX_CLASSES = 20;
+
 // Event types that indicate the room is available for general use (not occupied by a class)
 export const FREE_TIME_TYPES = new Set([
   "Aule studio",

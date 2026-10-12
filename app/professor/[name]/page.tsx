@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ProfessorCalendar from "./ProfessorCalendar";
+import { SITE_URL } from "@/lib/site";
 
 // The page body is a static client shell (schedule data is fetched in the
 // browser), so shell renders are hourly-cached.
@@ -29,7 +30,7 @@ export async function generateMetadata(
         openGraph: {
             title,
             description,
-            url: `https://bolibero.it/professor/${encodeURIComponent(displayName)}`,
+            url: `${SITE_URL}/professor/${encodeURIComponent(displayName)}`,
         },
     };
 }
