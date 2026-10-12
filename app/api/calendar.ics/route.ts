@@ -65,14 +65,27 @@ const foldLine = (line: string) => {
 const localDateTime = (date: string, time: string) =>
   `${date.replaceAll("-", "")}T${time.replace(":", "")}00`;
 
+// Scraped times are raw page text. One malformed time ("8:30", "24:00",
+// "8.30") makes an invalid VEVENT and strict calendar apps can reject the
+// whole feed, so times are validated and every emitted VEVENT is bounded.
+const normalizeTime = (time: string): string | null => {
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 24 || minutes > 59) return null;
+  return `${String(hours).padStart(2, "0")}:${match[2]}`;
+};
+
 const eventUid = (event: BocconiEvent) => {
+  // Room is intentionally NOT part of the identity: a room reassignment must
+  // update the existing event in subscriber calendars, not create a duplicate.
   const identity = [
     event.date,
     event.start,
     event.end,
     event.code,
     event.className,
-    event.roomRaw,
   ].join("|");
   return `${createHash("sha256").update(identity).digest("hex").slice(0, 24)}@bolibero.it`;
 };
@@ -113,6 +126,11 @@ function createCalendar(events: BocconiEvent[]) {
   ];
 
   for (const event of events) {
+    const start = normalizeTime(event.start);
+    let end = normalizeTime(event.end);
+    if (end === "24:00") end = "23:59";
+    if (!start || !end || end <= start) continue;
+
     const details = [
       `${event.code} ${event.className}`.trim(),
       event.type,
@@ -125,8 +143,8 @@ function createCalendar(events: BocconiEvent[]) {
       "BEGIN:VEVENT",
       `UID:${eventUid(event)}`,
       `DTSTAMP:${generatedAt}`,
-      `DTSTART;TZID=Europe/Rome:${localDateTime(event.date, event.start)}`,
-      `DTEND;TZID=Europe/Rome:${localDateTime(event.date, event.end)}`,
+      `DTSTART;TZID=Europe/Rome:${localDateTime(event.date, start)}`,
+      `DTEND;TZID=Europe/Rome:${localDateTime(event.date, end)}`,
       `SUMMARY:${icsEscape(`${eventTitle(event)} (${event.className})`)}`,
       `DESCRIPTION:${icsEscape(details)}`,
       `LOCATION:${icsEscape(event.roomRaw)}`,
