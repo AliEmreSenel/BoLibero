@@ -17,8 +17,10 @@ interface RoomCardProps {
   room: string;
   buildingDisplayName: string;
   timeSlots: TimeSlot[];
+  slotsLabel: string;
   isFree: boolean;
   isOpen: boolean;
+  openTime: string;
   availableStatusLabel: string;
   occupiedStatusLabel: string;
   buildingClosedMessage: string;
@@ -31,8 +33,10 @@ export function RoomCard({
   room,
   buildingDisplayName,
   timeSlots,
+  slotsLabel,
   isFree,
   isOpen,
+  openTime,
   availableStatusLabel,
   occupiedStatusLabel,
   buildingClosedMessage,
@@ -44,7 +48,9 @@ export function RoomCard({
       <CardContent className="p-6 flex flex-col h-full">
         {/* Room Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold">{room}</h3>
+          <h3 className="text-xl font-semibold truncate" title={room}>
+            {room}
+          </h3>
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
             <MapPin className="h-4 w-4" />
             <span>{buildingDisplayName}</span>
@@ -57,13 +63,20 @@ export function RoomCard({
           {!isOpen && (
             <div className="mb-4 p-2 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
               {buildingClosedMessage}
+              <div className="text-xs opacity-80">
+                {t.closedOpensAt} {openTime}
+              </div>
             </div>
           )}
 
           {isOpen && (
             <>
               {/* Time Slot Badges */}
-              <div className="mb-4 flex flex-wrap gap-2 min-h-[32px]">
+              <div className="mb-4 min-h-[52px]">
+                <div className="text-xs font-medium text-muted-foreground mb-1.5">
+                  {slotsLabel}
+                </div>
+                <div className="flex flex-wrap gap-2 min-h-[32px]">
                 {timeSlots.slice(0, 6).map((slot, index) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     <Clock className="h-3 w-3 mr-1" />
@@ -75,6 +88,7 @@ export function RoomCard({
                     +{timeSlots.length - 6}
                   </Badge>
                 )}
+                </div>
               </div>
 
               {/* Room Status */}
