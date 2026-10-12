@@ -152,6 +152,15 @@ export const translations = {
     shareClassList: "Copy class-list link",
     shareClassListHelp:
       "Share this link with classmates: it opens the calendar builder with your bundle pre-selected.",
+    mySchedule: "My Schedule",
+    myScheduleTitle: "My Schedule",
+    myScheduleDescription:
+      "Your next 7 days, built from the classes you selected in the class calendar.",
+    myScheduleEmpty:
+      "You haven't added any classes yet. Pick them in the class calendar and they will show up here.",
+    openClassCalendar: "Open class calendar",
+    noEventsNextDays: "No classes in the next 7 days.",
+    loadEventsError: "Some class schedules could not be loaded. Try again later.",
     dataSourceLine: "Data: didattica.unibocconi.it · updated",
     contact: "Contact",
     privacy: "Privacy",
@@ -328,6 +337,16 @@ export const translations = {
     shareClassList: "Copia link elenco lezioni",
     shareClassListHelp:
       "Condividi questo link con i compagni: apre il costruttore di calendario con il tuo gruppo già selezionato.",
+    mySchedule: "Il mio orario",
+    myScheduleTitle: "Il mio orario",
+    myScheduleDescription:
+      "I prossimi 7 giorni, costruiti dalle lezioni selezionate nel calendario lezioni.",
+    myScheduleEmpty:
+      "Non hai ancora aggiunto lezioni. Sceglile nel calendario lezioni e appariranno qui.",
+    openClassCalendar: "Apri calendario lezioni",
+    noEventsNextDays: "Nessuna lezione nei prossimi 7 giorni.",
+    loadEventsError:
+      "Alcuni orari delle lezioni non sono stati caricati. Riprova più tardi.",
     dataSourceLine: "Dati: didattica.unibocconi.it · aggiornati alle",
     contact: "Contatti",
     privacy: "Privacy",

@@ -14,6 +14,10 @@ const SETTINGS_KEY = "bspace-settings";
 // flash on load.
 const LANGUAGE_COOKIE = "bolibero_lang";
 
+// localStorage key for the calendar-builder class bundle, shared by the
+// builder, the My Schedule page and the class-list share link.
+export const SAVED_CLASSES_KEY = "bolibero-calendar-classes";
+
 export function getInitialLanguage(): Language {
   if (typeof document === "undefined") return "en";
   const match = document.cookie.match(/(?:^|;\s*)bolibero_lang=(en|it)(?:;|$)/);

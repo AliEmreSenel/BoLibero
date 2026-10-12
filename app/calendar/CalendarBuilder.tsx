@@ -24,7 +24,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { type Language, useTranslation } from "@/lib/i18n";
-import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
+import {
+  SAVED_CLASSES_KEY,
+  getInitialLanguage,
+  loadSettings,
+  saveSettings,
+} from "@/lib/settings";
 
 interface ClassOption {
   id: string;
@@ -32,8 +37,6 @@ interface ClassOption {
   section: string;
   title: string;
 }
-
-const SAVED_CLASSES_KEY = "bolibero-calendar-classes";
 
 export default function CalendarBuilder() {
   const [language, setLanguage] = useState<Language>(getInitialLanguage);

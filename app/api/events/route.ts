@@ -1,5 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { fetchBocconiEvents } from "@/lib/bocconi-calendar";
+import {
+  fetchBocconiEvents,
+  makeClassId,
+  parseClassId,
+} from "@/lib/bocconi-calendar";
 import { BUILDING_CONFIG } from "@/lib/constants";
 import {
   exactProfMatch,
@@ -27,6 +31,7 @@ export async function GET(request: NextRequest) {
   const room = (params.get("room") ?? "").trim();
   const building = (params.get("building") ?? "").trim();
   const prof = (params.get("prof") ?? "").trim();
+  const classId = (params.get("class") ?? "").trim();
   const day = (params.get("day") ?? "").trim();
 
   // day mode: the whole campus schedule for one date (drives the home grid).
@@ -42,14 +47,17 @@ export async function GET(request: NextRequest) {
   if (days > 120) return badRequest("date window is limited to 120 days");
 
   if (day) {
-    if (room || prof) {
-      return badRequest("day mode takes no room or prof");
+    if (room || prof || classId) {
+      return badRequest("day mode takes no room, prof or class");
     }
-  } else if (Boolean(room) === Boolean(prof)) {
-    return badRequest("exactly one of room or prof is required");
+  } else if ([room, prof, classId].filter(Boolean).length !== 1) {
+    return badRequest("exactly one of room, prof or class is required");
   }
-  if (room.length > 120 || prof.length > 120) {
+  if (room.length > 120 || prof.length > 120 || classId.length > 160) {
     return badRequest("query is too long");
+  }
+  if (classId && !parseClassId(classId)) {
+    return badRequest("class must be a valid class id");
   }
   if (room && !(BUILDING_CONFIG[building]?.rooms ?? []).includes(room)) {
     return badRequest("room must be a tracked room of the given building");
@@ -60,9 +68,9 @@ export async function GET(request: NextRequest) {
       startDate: new Date(`${from}T00:00:00Z`),
       endDate: new Date(`${to}T00:00:00Z`),
       room: room || undefined,
-      query: room ? undefined : prof,
+      query: room || classId ? undefined : prof,
       revalidateSeconds: UPSTREAM_REVALIDATE_SECONDS,
-      timeoutMs: day ? DAY_MODE_TIMEOUT_MS : undefined,
+      timeoutMs: day ? DAY_MODE_TIMEOUT_MS : classId ? DAY_MODE_TIMEOUT_MS : undefined,
     });
 
     const matched = events.filter((event) => {
@@ -70,6 +78,12 @@ export async function GET(request: NextRequest) {
       if (!inRange) return false;
       if (day) return true;
       if (room) return exactRoomMatch(room, event.rooms) && !isFreeTimeEvent(event);
+      if (classId) {
+        return (
+          !isFreeTimeEvent(event) &&
+          makeClassId(event.code, event.className) === classId
+        );
+      }
       return exactProfMatch(prof, event.teachers);
     });
 
