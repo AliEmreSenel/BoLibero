@@ -46,6 +46,7 @@ export default function CalendarBuilder() {
   const [copied, setCopied] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const searchParams = useSearchParams();
+  const [reloadKey, setReloadKey] = useState(0);
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -60,8 +61,12 @@ export default function CalendarBuilder() {
     } catch {
       window.localStorage.removeItem(SAVED_CLASSES_KEY);
     }
+  }, []);
 
+  useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     const requestedIds = searchParams.getAll("class");
     fetch("/api/classes", { signal: controller.signal })
       .then(async (response) => {
@@ -69,7 +74,7 @@ export default function CalendarBuilder() {
         return response.json();
       })
       .then((data) => {
-        const list: ClassOption[] = data.classes || [];
+        const list: ClassOption[] = Array.isArray(data.classes) ? data.classes : [];
         setClasses(list);
         if (requestedIds.length > 0) {
           const byId = new Map(list.map((item) => [item.id, item]));
@@ -93,7 +98,7 @@ export default function CalendarBuilder() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, []);
+  }, [reloadKey, searchParams, t.classCatalogError]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -185,8 +190,15 @@ export default function CalendarBuilder() {
                   {t.loadingClasses}
                 </div>
               ) : error ? (
-                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                  {error}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+                  <span>{error}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReloadKey((key) => key + 1)}
+                  >
+                    {t.refresh}
+                  </Button>
                 </div>
               ) : (
                 <div className="max-h-none space-y-2 pr-1 lg:max-h-[560px] lg:overflow-y-auto">
