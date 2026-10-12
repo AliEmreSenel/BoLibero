@@ -27,6 +27,12 @@ const MAX_RANGE_DAYS = 90;
 
 const getTodayDateValue = () => romeDateKey();
 
+// Computed once at module load; the picker window slides with page loads,
+// which is precise enough for a 90-day horizon.
+const MAX_DATE_VALUE = romeDateKey(
+  new Date(Date.now() + MAX_RANGE_DAYS * 86_400_000)
+);
+
 const parseDateValue = (dateValue: string): Date => {
   const [year, month, day] = dateValue.split("-").map(Number);
 
@@ -312,7 +318,7 @@ export default function BSpace() {
           visibleBuildings={visibleBuildings}
           filteredCount={displayedFilteredCount}
           minDate={todayDateValue}
-          maxDate={romeDateKey(new Date(Date.now() + MAX_RANGE_DAYS * 86_400_000))}
+          maxDate={MAX_DATE_VALUE}
           onReset={handleReset}
           t={t}
         />

@@ -28,12 +28,12 @@ export function generateStaticParams() {
 export async function generateMetadata(
     { params }: Props,
 ): Promise<Metadata> {
-    let { building, room } = await params;
+    const { building, room } = await params;
 
-    let p_building = decodeURIComponent(building);
-    let p_room = decodeURIComponent(room);
+    const p_building = decodeURIComponent(building);
+    const p_room = decodeURIComponent(room);
 
-    let data = BUILDING_CONFIG[p_building];
+    const data = BUILDING_CONFIG[p_building];
 
     const building_name = data.displayName;
     const room_name = p_room;
