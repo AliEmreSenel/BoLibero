@@ -5,7 +5,12 @@ import CalendarBuilder from "./CalendarBuilder";
 export const metadata: Metadata = {
   title: "Class Calendar | BoLibero",
   description:
-    "Select your Bocconi classes and subscribe to one automatically updated calendar.",
+    "Select your Bocconi classes once and subscribe to one automatically updated calendar in Google, Apple, or Outlook Calendar. No account required.",
+  openGraph: {
+    title: "Class Calendar | BoLibero",
+    description:
+      "Select your Bocconi classes once and subscribe to one automatically updated calendar in Google, Apple, or Outlook Calendar.",
+  },
 };
 
 export default function CalendarPage() {
