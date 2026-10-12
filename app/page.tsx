@@ -6,7 +6,6 @@ import { Loader2 } from "lucide-react";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import type { ScheduleData } from "@/lib/schedule-fetcher";
 import { PageLayout } from "@/components/page-layout";
-import { isBuildingOpen } from "@/lib/building-hours";
 import { PageHeader } from "@/components/page-header";
 import { SearchFilters } from "@/components/search-filters";
 import { RoomCard } from "@/components/room-card";
