@@ -12,7 +12,13 @@ import { loadSettings, saveSettings } from "@/lib/settings";
 
 export default function ProfessorCalendar() {
   const params = useParams();
-  const name = decodeURIComponent(params.name as string);
+  const rawName = Array.isArray(params.name) ? params.name[0] : (params.name as string);
+  let name = rawName;
+  try {
+    name = decodeURIComponent(rawName);
+  } catch {
+    // Keep malformed percent-encoding as a literal name.
+  }
 
   const [profEvents, setProfEvents] = useState<ClientEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -108,6 +114,7 @@ export default function ProfessorCalendar() {
           showRoomInEvents={true}
           showTeachersInEvents={false}
           emptyStateMessage={t.profNoClassToday}
+          failed={Boolean(error)}
         />
       </div>
     </PageLayout>
