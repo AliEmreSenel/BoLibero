@@ -28,6 +28,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "content-type": "application/x-sentry-envelope" },
         body: envelope,
+        signal: AbortSignal.timeout(5_000),
     });
 
     return new NextResponse(null, {

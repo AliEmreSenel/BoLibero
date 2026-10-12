@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { type NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import {
   eventTitle,
   fetchBocconiEvents,
@@ -200,6 +201,14 @@ export async function GET(request: NextRequest) {
         (a, b) =>
           a.date.localeCompare(b.date) || a.start.localeCompare(b.start)
       );
+
+    // Zero events for a validated bundle over a 19-month window means the
+    // scrape broke, not that the student has no classes. Fail loudly (no CDN
+    // write) so subscribers keep the last good calendar via stale-while-revalidate.
+    if (events.length === 0) {
+      Sentry.captureMessage("Subscription feed: scraped zero events over 19 months", "warning");
+      throw new Error("Zero events scraped");
+    }
 
     return new NextResponse(createCalendar(events), {
       headers: {

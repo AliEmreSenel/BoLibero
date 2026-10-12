@@ -32,6 +32,10 @@ const BOCONNI_SCHEDULE_URL =
 export const SUBSCRIPTION_REVALIDATE_SECONDS = 6 * 60 * 60;
 export const SUBSCRIPTION_STALE_SECONDS = 7 * 24 * 60 * 60;
 
+// Bocconi is a slow, flaky university server. Every upstream request is bounded
+// so failures are fast and cacheable-as-miss instead of wedging the stack.
+export const UPSTREAM_TIMEOUT_MS = 10_000;
+
 const decodeHtmlEntities = (value: string) => {
   const named: Record<string, string> = {
     amp: "&",
@@ -189,6 +193,7 @@ export async function fetchBocconiEvents(options: {
       "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
       "User-Agent": "BoLibero calendar subscription service",
     },
+    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
     next: { revalidate: SUBSCRIPTION_REVALIDATE_SECONDS },
   });
 
