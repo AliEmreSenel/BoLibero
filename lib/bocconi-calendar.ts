@@ -192,6 +192,7 @@ export async function fetchBocconiEvents(options: {
   room?: string;
   type?: string;
   revalidateSeconds?: number;
+  timeoutMs?: number;
 }): Promise<BocconiEvent[]> {
   const url = buildBocconiScheduleUrl(options);
   const response = await fetch(url, {
@@ -200,7 +201,7 @@ export async function fetchBocconiEvents(options: {
       "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
       "User-Agent": "BoLibero calendar subscription service",
     },
-    signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+    signal: AbortSignal.timeout(options.timeoutMs ?? UPSTREAM_TIMEOUT_MS),
     next: {
       revalidate: options.revalidateSeconds ?? SUBSCRIPTION_REVALIDATE_SECONDS,
     },
