@@ -180,11 +180,27 @@ export async function GET(request: NextRequest) {
   );
 
   try {
-    const eventGroups = await mapWithConcurrency(
+    // A failing class code must not 502 the whole subscription: serve the
+    // classes that loaded, warn on partials, fail only when all fetches fail.
+    type Group = { evs: BocconiEvent[] | null };
+    const groups = await mapWithConcurrency<Group>(
       uniqueCodes,
       UPSTREAM_CONCURRENCY,
-      (code) => fetchBocconiEvents({ startDate, endDate, query: code })
+      (code) =>
+        fetchBocconiEvents({ startDate, endDate, query: code })
+          .then((evs) => ({ evs }))
+          .catch(() => ({ evs: null }))
     );
+    const failures = groups.filter((group) => group.evs === null).length;
+    if (failures === groups.length) {
+      throw new Error("All class event fetches failed");
+    }
+    if (failures > 0) {
+      Sentry.captureMessage(`Subscription feed: ${failures}/${groups.length} class fetches failed`, "warning");
+    }
+    const eventGroups = groups
+      .filter((group): group is { evs: BocconiEvent[] } => group.evs !== null)
+      .map((group) => group.evs);
     const seen = new Set<string>();
     const events = eventGroups
       .flat()

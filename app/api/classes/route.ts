@@ -34,9 +34,21 @@ export async function GET() {
         endDate: new Date(Math.min(addUtcDays(cursor, 6).getTime(), endDate.getTime())),
       });
     }
-    const events = (
-      await Promise.all(ranges.map((range) => fetchBocconiEvents(range)))
-    ).flat();
+    // One flaky shard must not discard the good ones: collect what succeeded
+    // and only fail the whole request when every shard failed.
+    const settled = await Promise.allSettled(
+      ranges.map((range) => fetchBocconiEvents(range))
+    );
+    const failures = settled.filter((result) => result.status === "rejected").length;
+    if (failures === settled.length) {
+      throw new Error("All class catalog shards failed");
+    }
+    if (failures > 0) {
+      Sentry.captureMessage(`Class catalog: ${failures}/${settled.length} shards failed`, "warning");
+    }
+    const events = settled.flatMap(
+      (result) => (result.status === "fulfilled" ? result.value : [])
+    );
     const classes = new Map<string, ClassOption>();
 
     for (const event of events) {
