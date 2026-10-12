@@ -11,6 +11,7 @@ import {
   getVisibleBuildings,
   isStudyRoomType,
 } from "./constants";
+import { normalizeTime, toMinutes, minutesToTime } from "./time";
 import type { ClientEvent } from "./event-matching";
 
 export type ScheduleEvent = ClientEvent;
@@ -150,7 +151,9 @@ class ScheduleFetcher {
     }
   }
 
-  // Get free time slots for a room considering building hours
+  // Get free time slots for a room considering building hours.
+  // Busy intervals are normalized, clamped to opening hours and merged, so
+  // overlapping classes and malformed times cannot invent free slots.
   getFreeTimeSlots(
     building: string,
     room: string,
@@ -168,45 +171,33 @@ class ScheduleFetcher {
     const dayEnd = getBuildingClosingTime(building, date);
 
     const dateStr = this.formatDateKey(date);
-    const todayEvents = events
-      .filter((event) => event.date === dateStr)
-      .sort((a, b) => a.start.localeCompare(b.start));
 
+    const busy: Array<[number, number]> = [];
+    for (const event of events) {
+      if (event.date !== dateStr) continue;
+      const start = normalizeTime(event.start);
+      let end = normalizeTime(event.end);
+      if (end === "24:00") end = "23:59";
+      if (!start || !end || end <= start) continue;
+      const from = Math.max(toMinutes(start), toMinutes(dayStart));
+      const to = Math.min(toMinutes(end), toMinutes(dayEnd));
+      if (to > from) busy.push([from, to]);
+    }
+    busy.sort((a, b) => a[0] - b[0]);
+
+    const MIN_GAP_MINUTES = 15;
     const freeSlots: Array<{ start: string; end: string }> = [];
 
-    if (todayEvents.length === 0) {
-      freeSlots.push({ start: dayStart, end: dayEnd });
-      return freeSlots;
-    }
-
-    // Check if there's free time before first event
-    if (todayEvents[0].start > dayStart) {
-      if (todayEvents[0].start != "08:30")
-        freeSlots.push({ start: dayStart, end: todayEvents[0].start });
-    }
-
-    const toMinutes = (hhmm: string) => {
-      const [h, m] = hhmm.split(":").map(Number);
-      return h * 60 + m;
-    };
-
-    const MIN_GAP_MINUTES = 15; // "more than 15" → use >, not >=
-
-    for (let i = 0; i < todayEvents.length - 1; i++) {
-      const currentEnd = todayEvents[i].end; // e.g., "10:15"
-      const nextStart = todayEvents[i + 1].start; // e.g., "10:30"
-      const gap = toMinutes(nextStart) - toMinutes(currentEnd);
-
-      if (gap > MIN_GAP_MINUTES) {
-        freeSlots.push({ start: currentEnd, end: nextStart });
+    let cursor = toMinutes(dayStart);
+    for (const [from, to] of busy) {
+      if (from - cursor > MIN_GAP_MINUTES) {
+        freeSlots.push({ start: minutesToTime(cursor), end: minutesToTime(from) });
       }
+      cursor = Math.max(cursor, to);
+      if (cursor >= toMinutes(dayEnd)) break;
     }
-    // Check if there's free time after last event
-    const lastEvent = todayEvents[todayEvents.length - 1];
-    const gap = toMinutes(dayEnd) - toMinutes(lastEvent.end);
-
-    if (gap > MIN_GAP_MINUTES) {
-      freeSlots.push({ start: lastEvent.end, end: dayEnd });
+    if (toMinutes(dayEnd) - cursor > MIN_GAP_MINUTES) {
+      freeSlots.push({ start: minutesToTime(cursor), end: dayEnd });
     }
 
     return freeSlots;

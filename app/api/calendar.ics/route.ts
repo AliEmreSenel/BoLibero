@@ -11,6 +11,7 @@ import {
   type BocconiEvent,
 } from "@/lib/bocconi-calendar";
 import { MAX_CLASSES } from "@/lib/constants";
+import { normalizeTime } from "@/lib/time";
 
 export const revalidate = 21600;
 const UPSTREAM_CONCURRENCY = 4;
@@ -68,15 +69,6 @@ const localDateTime = (date: string, time: string) =>
 // Scraped times are raw page text. One malformed time ("8:30", "24:00",
 // "8.30") makes an invalid VEVENT and strict calendar apps can reject the
 // whole feed, so times are validated and every emitted VEVENT is bounded.
-const normalizeTime = (time: string): string | null => {
-  const match = time.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (hours > 24 || minutes > 59) return null;
-  return `${String(hours).padStart(2, "0")}:${match[2]}`;
-};
-
 const eventUid = (event: BocconiEvent) => {
   // Room is intentionally NOT part of the identity: a room reassignment must
   // update the existing event in subscriber calendars, not create a duplicate.
