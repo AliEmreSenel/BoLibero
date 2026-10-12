@@ -13,7 +13,13 @@ import { loadSettings, saveSettings } from "@/lib/settings";
 
 export default function ProfessorCalendar() {
   const params = useParams();
-  const name = decodeURIComponent(params.name as string);
+  const rawName = Array.isArray(params.name) ? params.name[0] : (params.name as string);
+  let name = rawName;
+  try {
+    name = decodeURIComponent(rawName);
+  } catch {
+    // keep the raw segment if it is not valid percent-encoding
+  }
 
   const [profEvents, setProfEvents] = useState<ScheduleEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
