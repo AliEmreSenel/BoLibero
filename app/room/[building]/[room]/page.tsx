@@ -6,7 +6,23 @@ import { BUILDING_CONFIG } from "@/lib/constants";
 
 type Props = {
     params: Promise<{ building: string, room: string }>
-    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+// The page body is a static client shell (schedule data is fetched in the
+// browser), so every view costs a function invocation for zero server work.
+// Prerender every tracked room and revalidate hourly; the sitemap's Googlebot
+// daily crawl is then served entirely from the CDN.
+export const revalidate = 3600;
+
+export function generateStaticParams() {
+    return Object.entries(BUILDING_CONFIG)
+        .filter(([, { visible }]) => visible)
+        .flatMap(([building, { rooms }]) =>
+            rooms.map((room) => ({
+                building: encodeURIComponent(building),
+                room: encodeURIComponent(room),
+            }))
+        );
 }
 
 function decodePathSegment(value: string): string {
@@ -28,7 +44,7 @@ function resolveRoom(building: string, room: string) {
 }
 
 export async function generateMetadata(
-    { params, searchParams }: Props,
+    { params }: Props,
 ): Promise<Metadata> {
     let { building, room } = await params;
 
