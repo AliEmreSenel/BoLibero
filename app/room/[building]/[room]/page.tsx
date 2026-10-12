@@ -47,9 +47,9 @@ function resolveRoom(building: string, room: string) {
 export async function generateMetadata(
     { params }: Props,
 ): Promise<Metadata> {
-    let { building, room } = await params;
+    const { building, room } = await params;
 
-    const { buildingKey, roomName, data } = resolveRoom(building, room);
+    const { roomName, data } = resolveRoom(building, room);
 
     const building_name = data.displayName;
     const room_name = roomName;

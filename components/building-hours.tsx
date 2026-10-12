@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, AlertCircle, Calendar } from "lucide-react"
 import { getBuildingStatus, formatBuildingHours } from "@/lib/building-hours"
-import { type Language, useTranslation } from "@/lib/i18n"
+import { type Language } from "@/lib/i18n"
 import { format } from "date-fns"
 import { it, enUS } from "date-fns/locale"
 
@@ -22,7 +22,6 @@ export function BuildingHours({
   language,
   compact = false,
 }: BuildingHoursProps) {
-  const t = useTranslation(language)
   const status = getBuildingStatus(buildingKey, date, language)
   const hoursText = formatBuildingHours(buildingKey, date, language)
 
