@@ -124,14 +124,23 @@ export const translations = {
     subscribeCalendar: "Subscribe",
     subscribeDescription:
       "Your calendar app will keep this schedule in sync automatically.",
-    openCalendarApp: "Add subscription calendar",
+    openCalendarApp: "Subscribe in calendar app",
     copySubscriptionUrl: "Copy subscription URL",
     copied: "Copied",
-    previewCalendarFeed: "Preview calendar feed",
+    previewCalendarFeed: "View raw .ics file",
     calendarCoverage:
-      "The feed includes six months of history and up to one year of published future classes.",
+      "The feed covers the current catalog window: classes from six months ago up to one year ahead.",
     subscriptionHelp:
       "For Google Calendar, copy the URL and use Other calendars → From URL. Apple Calendar and Outlook can open it directly.",
+    capReached:
+      "You've added the maximum of {max} classes. Remove one to add another.",
+    first100Note:
+      "Showing the first 100 matches — keep typing to narrow the list.",
+    webcalClicked:
+      "Your calendar app should open with a subscription prompt.",
+    resubscribeHint:
+      "Changed your classes? Copy the URL and subscribe again — most apps keep the old bundle until you re-subscribe.",
+    classNo: "Class no.",
 
     // Footer
     disclaimer:
@@ -262,14 +271,23 @@ export const translations = {
     subscribeCalendar: "Iscriviti",
     subscribeDescription:
       "L'app calendario manterrà automaticamente sincronizzato questo orario.",
-    openCalendarApp: "Aggiungi calendario in abbonamento",
+    openCalendarApp: "Iscrivi nel calendario",
     copySubscriptionUrl: "Copia URL di iscrizione",
     copied: "Copiato",
-    previewCalendarFeed: "Anteprima del calendario",
+    previewCalendarFeed: "Mostra file .ics grezzo",
     calendarCoverage:
-      "Il calendario include sei mesi di storico e fino a un anno di lezioni future già pubblicate.",
+      "Il feed copre la finestra del catalogo attuale: lezioni da sei mesi fa fino a un anno avanti.",
     subscriptionHelp:
       "Per Google Calendar, copia l'URL e usa Altri calendari → Da URL. Apple Calendar e Outlook possono aprirlo direttamente.",
+    capReached:
+      "Hai aggiunto il massimo di {max} lezioni. Rimuovine una per aggiungerne un'altra.",
+    first100Note:
+      "Mostrate i primi 100 risultati — continua a scrivere per restringere l'elenco.",
+    webcalClicked:
+      "L'app calendario dovrebbe aprirsi con una richiesta di iscrizione.",
+    resubscribeHint:
+      "Hai cambiato le tue lezioni? Copia di nuovo l'URL e iscriviti di nuovo — la maggior parte delle app mantiene il vecchio gruppo finché non ti riscrivi.",
+    classNo: "Cl. n.",
 
     // Footer
     disclaimer:

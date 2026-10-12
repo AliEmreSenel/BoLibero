@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CalendarPlus,
   Check,
@@ -43,6 +44,8 @@ export default function CalendarBuilder() {
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const searchParams = useSearchParams();
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -59,12 +62,31 @@ export default function CalendarBuilder() {
     }
 
     const controller = new AbortController();
+    const requestedIds = searchParams.getAll("class");
     fetch("/api/classes", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Class catalog request failed");
         return response.json();
       })
-      .then((data) => setClasses(data.classes || []))
+      .then((data) => {
+        const list: ClassOption[] = data.classes || [];
+        setClasses(list);
+        if (requestedIds.length > 0) {
+          const byId = new Map(list.map((item) => [item.id, item]));
+          setSelected((current) => {
+            const ids = new Set(current.map((item) => item.id));
+            const merged = [...current];
+            for (const id of requestedIds) {
+              const found = byId.get(id);
+              if (found && !ids.has(found.id)) {
+                ids.add(found.id);
+                merged.push(found);
+              }
+            }
+            return merged.slice(0, MAX_CLASSES);
+          });
+        }
+      })
       .catch((fetchError) => {
         if (fetchError.name !== "AbortError") setError(t.classCatalogError);
       })
@@ -83,15 +105,15 @@ export default function CalendarBuilder() {
     () => new Set(selected.map((item) => item.id)),
     [selected]
   );
-  const visibleClasses = useMemo(() => {
+  const matches = useMemo(() => {
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-    return classes
-      .filter((item) => {
-        const searchable = `${item.code} ${item.section} ${item.title}`.toLowerCase();
-        return terms.every((term) => searchable.includes(term));
-      })
-      .slice(0, 100);
+    return classes.filter((item) => {
+      const searchable = `${item.code} ${item.section} ${item.title}`.toLowerCase();
+      return terms.every((term) => searchable.includes(term));
+    });
   }, [classes, query]);
+  const visibleClasses = useMemo(() => matches.slice(0, 100), [matches]);
+  const capReached = selected.length >= MAX_CLASSES;
 
   const subscriptionUrl = useMemo(() => {
     if (!origin || selected.length === 0) return "";
@@ -105,6 +127,7 @@ export default function CalendarBuilder() {
 
   const toggleClass = (item: ClassOption) => {
     setCopied(false);
+    setSubscribed(false);
     setSelected((current) => {
       if (current.some((selectedClass) => selectedClass.id === item.id)) {
         return current.filter((selectedClass) => selectedClass.id !== item.id);
@@ -169,15 +192,17 @@ export default function CalendarBuilder() {
                 <div className="max-h-[560px] space-y-2 overflow-y-auto pr-1">
                   {visibleClasses.map((item) => {
                     const isSelected = selectedIds.has(item.id);
+                    const isDisabled = !isSelected && capReached;
                     return (
                       <button
                         type="button"
                         key={item.id}
                         onClick={() => toggleClass(item)}
                         aria-pressed={isSelected}
+                        disabled={isDisabled}
                         className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
                           isSelected ? "border-primary bg-primary/5" : ""
-                        }`}
+                        } ${isDisabled ? "opacity-50 hover:bg-transparent" : ""}`}
                       >
                         <span
                           className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
@@ -191,13 +216,23 @@ export default function CalendarBuilder() {
                         <span className="min-w-0 flex-1">
                           <span className="mb-1 flex flex-wrap items-center gap-2">
                             <span className="font-semibold">{item.title}</span>
-                            <Badge variant="secondary">{item.code}</Badge>
+                            <Badge variant="secondary">
+                              {t.classNo} {item.code}
+                            </Badge>
                             <Badge variant="outline">{item.section}</Badge>
                           </span>
                         </span>
                       </button>
                     );
                   })}
+                  {capReached && (
+                    <p className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                      {t.capReached.replace("{max}", String(MAX_CLASSES))}
+                    </p>
+                  )}
+                  {matches.length > 100 && (
+                    <p className="text-xs text-muted-foreground">{t.first100Note}</p>
+                  )}
                   {visibleClasses.length === 0 && (
                     <p className="py-12 text-center text-muted-foreground">
                       {t.noClassesFound}
@@ -259,21 +294,7 @@ export default function CalendarBuilder() {
                 <CardDescription>{t.subscribeDescription}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {subscriptionUrl ? (
-                  <Button asChild className="w-full">
-                    <a href={webcalUrl}>
-                      <CalendarPlus className="h-4 w-4" />
-                      {t.openCalendarApp}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button className="w-full" disabled>
-                    <CalendarPlus className="h-4 w-4" />
-                    {t.openCalendarApp}
-                  </Button>
-                )}
                 <Button
-                  variant="outline"
                   className="w-full"
                   onClick={copyUrl}
                   disabled={!subscriptionUrl}
@@ -285,6 +306,29 @@ export default function CalendarBuilder() {
                   )}
                   {copied ? t.copied : t.copySubscriptionUrl}
                 </Button>
+                {subscriptionUrl ? (
+                  <Button asChild variant="outline" className="w-full">
+                    <a
+                      href={webcalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => setSubscribed(true)}
+                    >
+                      <CalendarPlus className="h-4 w-4" />
+                      {t.openCalendarApp}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full" disabled>
+                    <CalendarPlus className="h-4 w-4" />
+                    {t.openCalendarApp}
+                  </Button>
+                )}
+                {subscribed && subscriptionUrl && (
+                  <p className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs text-muted-foreground">
+                    {t.webcalClicked}
+                  </p>
+                )}
                 {subscriptionUrl && (
                   <a
                     href={subscriptionUrl}
@@ -301,6 +345,11 @@ export default function CalendarBuilder() {
                   <br />
                   {t.subscriptionHelp}
                 </p>
+                {subscriptionUrl && (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {t.resubscribeHint}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
