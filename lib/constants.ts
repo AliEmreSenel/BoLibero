@@ -230,59 +230,30 @@ export const BUILDINGS = Object.fromEntries(
 // advertised cap and the enforced cap can never diverge.
 export const MAX_CLASSES = 20;
 
-// Event types that indicate the room is available for general use (not occupied by a class)
-export const FREE_TIME_TYPES = new Set([
-  "Aule studio",
-  "Studio",
-  "Aule Studio",
-  "AULE STUDIO",
-  "aule studio",
-]);
-
-// Event types that indicate the room is an officially designated study room
-export const STUDY_ROOM_TYPES = new Set([
-  "Aule studio",
-  "Aule Studio",
-  "AULE STUDIO",
-  "aule studio",
-  "Aula studio",
-  "Aula Studio",
-  "AULA STUDIO",
-  "aula studio",
-]);
+/**
+ * Shared whole-entity normalization for scraped names (rooms, teachers):
+ * collapse whitespace, trim, casefold. Matching must use this rule
+ * everywhere so the same entity never compares unequal.
+ */
+export const normalizeEntity = (value: string): string =>
+  value.replace(/\s+/g, " ").trim().toLowerCase();
 
 /**
- * Check if an event type indicates the room is free for general use
+ * Check if an event type indicates the room is free for general use.
+ * Type only: the description is a free-text class title and substring rules
+ * there made real classes look like free time.
  */
-export function isEventTypeFreeTime(
-  eventType: string,
-  description = ""
-): boolean {
-  const lowerType = eventType.toLowerCase().trim();
-  const lowerDesc = description.toLowerCase().trim();
-
-  return (
-    FREE_TIME_TYPES.has(eventType.trim()) ||
-    lowerType.includes("aule studio") ||
-    lowerType === "studio" ||
-    lowerDesc.includes("aule studio")
-  );
+export function isEventTypeFreeTime(eventType: string): boolean {
+  const type = normalizeEntity(eventType);
+  return type === "aule studio" || type === "aula studio" || type === "studio";
 }
 
 /**
  * Check if an event type indicates the room is an official study room
  */
-export function isStudyRoomType(eventType: string, description = ""): boolean {
-  const lowerType = eventType.toLowerCase().trim();
-  const lowerDesc = description.toLowerCase().trim();
-
-  return (
-    STUDY_ROOM_TYPES.has(eventType.trim()) ||
-    lowerType.includes("aule studio") ||
-    lowerType.includes("aula studio") ||
-    lowerDesc.includes("aule studio") ||
-    lowerDesc.includes("aula studio")
-  );
+export function isStudyRoomType(eventType: string): boolean {
+  const type = normalizeEntity(eventType);
+  return type === "aule studio" || type === "aula studio";
 }
 
 /**
@@ -317,8 +288,11 @@ export function getAllValidRooms(): Set<string> {
 }
 
 /**
- * Check if a room name is in the valid rooms list
+ * Check if a room name is in the valid rooms list, using the shared
+ * whole-entity normalization so " Aula 1 " matches "Aula 1".
  */
+let normalizedValidRooms: Set<string> | null = null;
 export function isValidRoom(roomName: string): boolean {
-  return getAllValidRooms().has(roomName);
+  normalizedValidRooms ??= new Set([...getAllValidRooms()].map(normalizeEntity));
+  return normalizedValidRooms.has(normalizeEntity(roomName));
 }

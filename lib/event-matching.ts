@@ -1,6 +1,7 @@
 import {
   isEventTypeFreeTime,
   isStudyRoomType,
+  normalizeEntity,
 } from "@/lib/constants";
 import type { BocconiEvent, BocconiRoom } from "@/lib/bocconi-calendar";
 
@@ -22,7 +23,7 @@ export interface ClientEvent {
   isStudyRoom: boolean;
 }
 
-const normalize = (value: string) => value.replace(/\s+/g, " ").trim().toLowerCase();
+const normalize = normalizeEntity;
 
 // The scraped room/professor fields list several entities per row; matching
 // must be whole-entity (case/whitespace-insensitive) so "Aula 1" never
@@ -45,8 +46,8 @@ export const toClientEvent = (event: BocconiEvent): ClientEvent => ({
   rooms: event.rooms,
   teacher_raw: event.teacherRaw,
   room_raw: event.roomRaw,
-  isStudyRoom: isStudyRoomType(event.type, event.description),
+  isStudyRoom: isStudyRoomType(event.type),
 });
 
 export const isFreeTimeEvent = (event: BocconiEvent) =>
-  isEventTypeFreeTime(event.type, event.description);
+  isEventTypeFreeTime(event.type);

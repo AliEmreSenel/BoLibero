@@ -12,6 +12,10 @@ import {
   isStudyRoomType,
 } from "./constants";
 import { normalizeTime, toMinutes, minutesToTime } from "./time";
+import * as Sentry from "@sentry/nextjs";
+
+// Each unknown room is reported at most once per page session.
+const reportedUnknownRooms = new Set<string>();
 import type { ClientEvent } from "./event-matching";
 
 export type ScheduleEvent = ClientEvent;
@@ -81,10 +85,11 @@ class ScheduleFetcher {
     // BUT exclude events that indicate free time
     for (const item of scheduleItems) {
       // Skip events that indicate the room is available for general use
-      if (isEventTypeFreeTime(item.type, item.description)) {
+      if (isEventTypeFreeTime(item.type)) {
         continue;
       }
 
+      let placed = false;
       for (const { roomName, building } of item.rooms) {
         // Only add if room is in our valid list and building exists
         if (
@@ -93,6 +98,22 @@ class ScheduleFetcher {
           organized[building][roomName]
         ) {
           organized[building][roomName].push(item);
+          placed = true;
+        }
+      }
+
+      // A listed room that is not in our tracking config means Bocconi added
+      // a room the app silently ignores. Surface it once per room so the
+      // constants list can be updated.
+      if (item.rooms.length > 0 && !placed) {
+        for (const { roomName } of item.rooms) {
+          if (!reportedUnknownRooms.has(roomName)) {
+            reportedUnknownRooms.add(roomName);
+            Sentry.captureMessage(
+              `Schedule event in untracked room: "${roomName}"`,
+              "warning"
+            );
+          }
         }
       }
     }
@@ -126,7 +147,7 @@ class ScheduleFetcher {
    */
   private updateStudyRooms(scheduleItems: ScheduleEvent[]): void {
     for (const item of scheduleItems) {
-      if (isStudyRoomType(item.type, item.description)) {
+      if (isStudyRoomType(item.type)) {
         for (const { roomName, building } of item.rooms) {
           if (isValidRoom(roomName)) {
             // Track that this room is a study room
