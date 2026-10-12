@@ -13,6 +13,10 @@ import {
 // Five-minute freshness matches the app's availability promise.
 const UPSTREAM_REVALIDATE_SECONDS = 300;
 
+// The unfiltered campus query returns the full table and is markedly slower
+// upstream than a room-scoped one.
+const DAY_MODE_TIMEOUT_MS = 25_000;
+
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const badRequest = (message: string) =>
@@ -20,11 +24,14 @@ const badRequest = (message: string) =>
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  const from = params.get("from") ?? "";
-  const to = params.get("to") ?? "";
   const room = (params.get("room") ?? "").trim();
   const building = (params.get("building") ?? "").trim();
   const prof = (params.get("prof") ?? "").trim();
+  const day = (params.get("day") ?? "").trim();
+
+  // day mode: the whole campus schedule for one date (drives the home grid).
+  const from = day || (params.get("from") ?? "");
+  const to = day || (params.get("to") ?? "");
 
   if (!DATE_RE.test(from) || !DATE_RE.test(to) || from > to) {
     return badRequest("from and to must be YYYY-MM-DD with from <= to");
@@ -34,7 +41,11 @@ export async function GET(request: NextRequest) {
     86_400_000;
   if (days > 120) return badRequest("date window is limited to 120 days");
 
-  if (Boolean(room) === Boolean(prof)) {
+  if (day) {
+    if (room || prof) {
+      return badRequest("day mode takes no room or prof");
+    }
+  } else if (Boolean(room) === Boolean(prof)) {
     return badRequest("exactly one of room or prof is required");
   }
   if (room.length > 120 || prof.length > 120) {
@@ -51,11 +62,13 @@ export async function GET(request: NextRequest) {
       room: room || undefined,
       query: room ? undefined : prof,
       revalidateSeconds: UPSTREAM_REVALIDATE_SECONDS,
+      timeoutMs: day ? DAY_MODE_TIMEOUT_MS : undefined,
     });
 
     const matched = events.filter((event) => {
       const inRange = event.date >= from && event.date <= to;
       if (!inRange) return false;
+      if (day) return true;
       if (room) return exactRoomMatch(room, event.rooms) && !isFreeTimeEvent(event);
       return exactProfMatch(prof, event.teachers);
     });
