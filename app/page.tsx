@@ -77,6 +77,13 @@ export default function BSpace() {
     () => parseDateValue(selectedDate),
     [selectedDate]
   );
+  const allBuildingsClosed = useMemo(
+    () => {
+      const keys = Object.keys(fetcher.getVisibleBuildings());
+      return keys.length > 0 && keys.every((key) => !isBuildingOpen(key, selectedDateObj));
+    },
+    [selectedDateObj]
+  );
 
   // Load settings on mount
   useEffect(() => {
@@ -324,6 +331,12 @@ export default function BSpace() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>{t.loading}</span>
             </div>
+          </div>
+        )}
+
+        {allBuildingsClosed && (
+          <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {t.allBuildingsClosed}
           </div>
         )}
 
