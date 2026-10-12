@@ -43,6 +43,7 @@ export default function CalendarBuilder() {
   const [error, setError] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -57,21 +58,27 @@ export default function CalendarBuilder() {
     } catch {
       window.localStorage.removeItem(SAVED_CLASSES_KEY);
     }
+  }, []);
 
+  useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     fetch("/api/classes", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Class catalog request failed");
         return response.json();
       })
-      .then((data) => setClasses(data.classes || []))
+      .then((data) =>
+        setClasses(Array.isArray(data.classes) ? data.classes : [])
+      )
       .catch((fetchError) => {
         if (fetchError.name !== "AbortError") setError(t.classCatalogError);
       })
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, []);
+  }, [reloadKey, t.classCatalogError]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -162,8 +169,15 @@ export default function CalendarBuilder() {
                   {t.loadingClasses}
                 </div>
               ) : error ? (
-                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                  {error}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+                  <span>{error}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReloadKey((key) => key + 1)}
+                  >
+                    {t.refresh}
+                  </Button>
                 </div>
               ) : (
                 <div className="max-h-[560px] space-y-2 overflow-y-auto pr-1">
