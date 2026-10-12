@@ -95,7 +95,7 @@ export function RoomCard({
               {showStatus && (
                 <div className="mb-4">
                   <div
-                    className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
+                    className={`text-sm font-medium ${isFree ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
                   >
                     {isFree
                       ? `✓ ${availableStatusLabel}`
