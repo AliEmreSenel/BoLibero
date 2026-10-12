@@ -9,6 +9,17 @@ export interface Settings {
 
 const SETTINGS_KEY = "bspace-settings";
 
+// The language cookie is rendered before hydration (layout lang attr and
+// initial React state), so a returning Italian student never sees an English
+// flash on load.
+const LANGUAGE_COOKIE = "bolibero_lang";
+
+export function getInitialLanguage(): Language {
+  if (typeof document === "undefined") return "en";
+  const match = document.cookie.match(/(?:^|;\s*)bolibero_lang=(en|it)(?:;|$)/);
+  return match ? (match[1] as Language) : "en";
+}
+
 export function getDefaultSettings(): Settings {
   return {
     theme: "system",
@@ -42,6 +53,7 @@ export function saveSettings(settings: Settings) {
 
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    document.cookie = `${LANGUAGE_COOKIE}=${settings.language}; path=/; max-age=31536000; samesite=lax`;
   } catch (error) {
     console.warn("Failed to save settings:", error);
   }

@@ -14,7 +14,7 @@ import {
   RoomGridSkeleton,
 } from "@/components/skeletons";
 import { type Language, useTranslation } from "@/lib/i18n";
-import { loadSettings, saveSettings } from "@/lib/settings";
+import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
 import { romeDateKey, romeMinutes } from "@/lib/time";
 
@@ -49,7 +49,7 @@ export default function BSpace() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
   // Status badges are present-tense; re-render once a minute so "now" stays true.
   const [nowTick, setNowTick] = useState(0);
 
@@ -145,7 +145,7 @@ export default function BSpace() {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, selectedDateObj, t.error]);
+  }, [fetcher, selectedDateObj]);
 
   /**
    * Get time slots for a room - if showOnlyStudyRooms is enabled,

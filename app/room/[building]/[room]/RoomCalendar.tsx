@@ -10,7 +10,7 @@ import { PageLayout } from "@/components/page-layout";
 import { DetailHeader } from "@/components/detail-header";
 import { CalendarView } from "@/components/calendar-view";
 import { type Language, useTranslation } from "@/lib/i18n";
-import { loadSettings, saveSettings } from "@/lib/settings";
+import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 
 export default function RoomCalendar() {
   const params = useParams();
@@ -23,7 +23,7 @@ export default function RoomCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
 
   const t = useTranslation(language);
 
