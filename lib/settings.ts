@@ -25,6 +25,9 @@ export const FAVORITE_ROOMS_KEY = "bolibero-favorite-rooms";
 // room reassignments between visits (room-change banner).
 export const SCHEDULE_SNAPSHOT_KEY = "bolibero-schedule-snapshot";
 
+// Local exams/deadlines tracker entries (device-only, exportable to ICS).
+export const EXAMS_KEY = "bolibero-exams";
+
 export function getInitialLanguage(): Language {
   if (typeof document === "undefined") return "en";
   const match = document.cookie.match(/(?:^|;\s*)bolibero_lang=(en|it)(?:;|$)/);
