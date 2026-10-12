@@ -26,6 +26,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'weekly',
             priority: 0.9,
         },
+        {
+            url: `${BASE_URL}/schedule`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.7,
+        },
+        {
+            url: `${BASE_URL}/exams`,
+            lastModified: now,
+            changeFrequency: 'weekly',
+            priority: 0.7,
+        },
+        {
+            url: `${BASE_URL}/privacy-policy`,
+            lastModified: now,
+            changeFrequency: 'yearly',
+            priority: 0.3,
+        },
     ]
 
     const roomEntries: MetadataRoute.Sitemap = Object.entries(BUILDING_CONFIG)
