@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, ArrowRight, Clock } from "lucide-react";
+import { MapPin, ArrowRight, Clock, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,8 @@ interface RoomCardProps {
   occupiedStatusLabel: string;
   buildingClosedMessage: string;
   showStatus?: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
   t: Translations;
 }
 
@@ -41,6 +43,8 @@ export function RoomCard({
   occupiedStatusLabel,
   buildingClosedMessage,
   showStatus = true,
+  isFavorite,
+  onToggleFavorite,
   t,
 }: RoomCardProps) {
   return (
@@ -54,6 +58,20 @@ export function RoomCard({
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
             <MapPin className="h-4 w-4" />
             <span>{buildingDisplayName}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onToggleFavorite}
+              aria-label={isFavorite ? t.removeFavorite : t.addFavorite}
+              aria-pressed={isFavorite}
+            >
+              <Star
+                className={`h-4 w-4 ${
+                  isFavorite ? "fill-amber-400 text-amber-400" : ""
+                }`}
+              />
+            </Button>
           </div>
         </div>
 

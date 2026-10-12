@@ -14,10 +14,15 @@ import {
   RoomGridSkeleton,
 } from "@/components/skeletons";
 import { type Language, useTranslation } from "@/lib/i18n";
-import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
+import {
+  FAVORITE_ROOMS_KEY,
+  getInitialLanguage,
+  loadSettings,
+  saveSettings,
+} from "@/lib/settings";
 import { isBuildingOpen, getBuildingOpeningTime } from "@/lib/building-hours";
 import { getBuildingDisplayName } from "@/lib/constants";
-import { romeDateKey, romeMinutes } from "@/lib/time";
+import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
 
 interface TimeSlot {
   start: string;
@@ -53,6 +58,9 @@ export default function BSpace() {
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
   const [showOnlyStudyRooms, setShowOnlyStudyRooms] = useState(false);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [showOnly2h, setShowOnly2h] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -102,6 +110,14 @@ export default function BSpace() {
     const loadedSettings = loadSettings();
     setLanguage(loadedSettings.language);
     setShowOnlyStudyRooms(loadedSettings.showOnlyStudyRooms);
+    try {
+      const saved = JSON.parse(
+        window.localStorage.getItem(FAVORITE_ROOMS_KEY) || "[]"
+      );
+      if (Array.isArray(saved)) setFavorites(saved);
+    } catch {
+      // Corrupt favorites list: start clean.
+    }
   }, []);
 
   useEffect(() => {
@@ -212,8 +228,25 @@ export default function BSpace() {
     Object.keys(rooms).map((room) => ({ building, room }))
   );
 
+  const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+
+  const toggleFavorite = (building: string, room: string) => {
+    const key = `${building}/${room}`;
+    setFavorites((current) => {
+      const next = current.includes(key)
+        ? current.filter((item) => item !== key)
+        : [...current, key];
+      try {
+        window.localStorage.setItem(FAVORITE_ROOMS_KEY, JSON.stringify(next));
+      } catch {
+        // Storage full/unavailable: favorites stay for this session.
+      }
+      return next;
+    });
+  };
+
   const filteredRooms = useMemo(() => {
-    return allRooms.filter(({ building, room }) => {
+    const filtered = allRooms.filter(({ building, room }) => {
       const buildingMatch =
         selectedBuilding === "all" || building === selectedBuilding;
       const searchMatch =
@@ -227,6 +260,13 @@ export default function BSpace() {
       const availabilityMatch =
         !availabilityActive || isRoomCurrentlyFree(building, room);
       const timeRangeMatch = isRoomAvailableInTimeRange(building, room);
+      const favoriteMatch =
+        !showOnlyFavorites || favoriteSet.has(`${building}/${room}`);
+      const free2hMatch =
+        !showOnly2h ||
+        getDisplayTimeSlots(building, room).some(
+          (slot) => toMinutes(slot.end) - toMinutes(slot.start) >= 120
+        );
       // Filter by time slots - only show rooms that have study room time slots when enabled
       const studyRoomMatch =
         !showOnlyStudyRooms ||
@@ -238,15 +278,29 @@ export default function BSpace() {
         searchMatch &&
         availabilityMatch &&
         timeRangeMatch &&
+        favoriteMatch &&
+        free2hMatch &&
         studyRoomMatch
       );
     });
+    // Favorites always sort to the top of the grid.
+    return [
+      ...filtered.filter(({ building, room }) =>
+        favoriteSet.has(`${building}/${room}`)
+      ),
+      ...filtered.filter(
+        ({ building, room }) => !favoriteSet.has(`${building}/${room}`)
+      ),
+    ];
   }, [
     allRooms,
     selectedBuilding,
     searchQuery,
     availabilityActive,
     showOnlyStudyRooms,
+    showOnlyFavorites,
+    showOnly2h,
+    favoriteSet,
     startTime,
     endTime,
     selectedDate,
@@ -281,6 +335,8 @@ export default function BSpace() {
     selectedBuilding !== "all" ||
     availabilityActive ||
     showOnlyStudyRooms ||
+    showOnlyFavorites ||
+    showOnly2h ||
     startTime !== "" ||
     endTime !== "";
 
@@ -292,6 +348,8 @@ export default function BSpace() {
     setSelectedBuilding("all");
     setShowOnlyAvailable(false);
     setShowOnlyStudyRooms(false);
+    setShowOnlyFavorites(false);
+    setShowOnly2h(false);
     const currentSettings = loadSettings();
     saveSettings({ ...currentSettings, showOnlyStudyRooms: false });
   };
@@ -333,6 +391,11 @@ export default function BSpace() {
           availabilityFilterLabel={availabilityFilterLabel}
           showOnlyStudyRooms={showOnlyStudyRooms}
           onStudyRoomsChange={handleStudyRoomsChange}
+          showOnlyFavorites={showOnlyFavorites}
+          onFavoritesChange={setShowOnlyFavorites}
+          favoriteCount={favorites.length}
+          showOnly2h={showOnly2h}
+          on2hChange={setShowOnly2h}
           visibleBuildings={visibleBuildings}
           filteredCount={displayedFilteredCount}
           minDate={todayDateValue}
@@ -400,6 +463,8 @@ export default function BSpace() {
                 availableStatusLabel={availabilityStatusLabel}
                 occupiedStatusLabel={occupiedLabel}
                 buildingClosedMessage={buildingClosedMessage}
+                isFavorite={favoriteSet.has(`${building}/${room}`)}
+                onToggleFavorite={() => toggleFavorite(building, room)}
                 showStatus={!isPastDate}
                 t={t}
               />
