@@ -21,6 +21,10 @@ export const SAVED_CLASSES_KEY = "bolibero-calendar-classes";
 // Room favorites for the home grid ("Leoni/Aula 1" keys).
 export const FAVORITE_ROOMS_KEY = "bolibero-favorite-rooms";
 
+// Last-seen "identity -> room" snapshot of the user's bundle, used to detect
+// room reassignments between visits (room-change banner).
+export const SCHEDULE_SNAPSHOT_KEY = "bolibero-schedule-snapshot";
+
 export function getInitialLanguage(): Language {
   if (typeof document === "undefined") return "en";
   const match = document.cookie.match(/(?:^|;\s*)bolibero_lang=(en|it)(?:;|$)/);

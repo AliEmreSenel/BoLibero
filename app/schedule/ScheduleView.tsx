@@ -8,7 +8,7 @@ import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey } from "@/lib/time";
-import { SAVED_CLASSES_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
+import { SAVED_CLASSES_KEY, SCHEDULE_SNAPSHOT_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
 import { parseISO } from "date-fns";
 
@@ -16,6 +16,17 @@ interface BundleClass {
   id: string;
   title: string;
 }
+
+interface RoomChange {
+  date: string;
+  start: string;
+  className: string;
+  from: string;
+  to: string;
+}
+
+const eventIdentity = (event: ClientEvent) =>
+  `${event.date}|${event.start}|${event.end}|${event.code}|${event.class}`;
 
 const DAYS_AHEAD = 7;
 
@@ -25,6 +36,7 @@ export default function ScheduleView() {
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [roomChanges, setRoomChanges] = useState<RoomChange[]>([]);
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -73,6 +85,46 @@ export default function ScheduleView() {
       merged.sort(
         (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)
       );
+
+      // Room-change detection: diff the bundle's future events against the
+      // last-seen snapshot (identity excludes room, as in the ICS UID).
+      const todayKey = romeDateKey(new Date());
+      const snapshot: Record<string, string> = {};
+      for (const event of merged) {
+        if (event.date >= todayKey) snapshot[eventIdentity(event)] = event.room_raw;
+      }
+      let previous: Record<string, string> = {};
+      try {
+        previous = JSON.parse(
+          window.localStorage.getItem(SCHEDULE_SNAPSHOT_KEY) || "{}"
+        );
+      } catch {
+        // Corrupt snapshot: treat as first visit.
+      }
+      const changes: RoomChange[] = [];
+      for (const event of merged) {
+        if (event.date < todayKey) continue;
+        const before = previous[eventIdentity(event)];
+        if (before && before !== event.room_raw) {
+          changes.push({
+            date: event.date,
+            start: event.start,
+            className: event.class,
+            from: before,
+            to: event.room_raw,
+          });
+        }
+      }
+      try {
+        window.localStorage.setItem(
+          SCHEDULE_SNAPSHOT_KEY,
+          JSON.stringify(snapshot)
+        );
+      } catch {
+        // Storage unavailable: skip change detection this visit.
+      }
+      setRoomChanges(changes);
+
       setEvents(merged);
       setError(failed);
       setLoading(false);
@@ -129,6 +181,20 @@ export default function ScheduleView() {
               <p className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {t.loadEventsError}
               </p>
+            )}
+            {roomChanges.length > 0 && (
+              <div className="rounded-md border border-amber-300/50 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
+                <p className="mb-1 font-medium">{t.roomChangeBanner}</p>
+                <ul className="list-disc space-y-1 pl-5">
+                  {roomChanges.map((change, index) => (
+                    <li key={index}>
+                      {formatDateFull(parseISO(change.date), language)}{" "}
+                      {change.start} — {change.className}: {change.from} →{" "}
+                      {change.to}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             {days.length === 0 && (
               <p className="py-8 text-center text-muted-foreground">
