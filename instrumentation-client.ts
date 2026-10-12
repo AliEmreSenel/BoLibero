@@ -39,18 +39,24 @@ Sentry.init({
     dsn: "https://0bbc394747dec3e3ac0609076b53bb78@o4509701983174656.ingest.de.sentry.io/4510102691381328",
     transport: makeOpaqueTransport,
 
+    // This is a hobby-tier project: dev traffic must not consume quota, and
+    // every trace/log shipped from this client costs a relay invocation.
+    enabled: process.env.NODE_ENV === "production",
+    environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? "production",
+
     // Add optional integrations for additional features
     integrations: [
         Sentry.replayIntegration(),
         Sentry.consoleLoggingIntegration({
-            levels: ["log", "warn", "error"],
+            // Console "log" calls contain scraped schedules and professor
+            // names; only warnings and errors belong in telemetry.
+            levels: ["warn", "error"],
         }),
     ],
 
-    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-    tracesSampleRate: 1,
-    // Enable logs to be sent to Sentry
-    enableLogs: true,
+    // 100% of traces at student-app traffic burns the quota and multiplies
+    // relay invocations. Errors and on-error replays stay at 100%.
+    tracesSampleRate: 0.1,
 
     // Define how likely Replay events are sampled.
     // This sets the sample rate to be 10%. You may want this to be 100% while
