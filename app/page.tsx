@@ -368,7 +368,7 @@ export default function BSpace() {
         )}
 
         {isFutureDate && (
-          <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50/80 px-4 py-3 text-sm text-amber-900">
+          <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
             {t.futureDatesNotice}
           </div>
         )}
