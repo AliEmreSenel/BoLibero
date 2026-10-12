@@ -1,0 +1,78 @@
+import { type NextRequest, NextResponse } from "next/server";
+import { fetchBocconiEvents } from "@/lib/bocconi-calendar";
+import { BUILDING_CONFIG } from "@/lib/constants";
+import {
+  exactProfMatch,
+  exactRoomMatch,
+  isFreeTimeEvent,
+  toClientEvent,
+} from "@/lib/event-matching";
+
+// One parser, one truth: the UI pages get the same server-parsed events as the
+// ICS feed (parseBocconiSchedule), replacing the browser DOMParser twin.
+// Five-minute freshness matches the app's availability promise.
+const UPSTREAM_REVALIDATE_SECONDS = 300;
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const badRequest = (message: string) =>
+  NextResponse.json({ error: message }, { status: 400 });
+
+export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams;
+  const from = params.get("from") ?? "";
+  const to = params.get("to") ?? "";
+  const room = (params.get("room") ?? "").trim();
+  const building = (params.get("building") ?? "").trim();
+  const prof = (params.get("prof") ?? "").trim();
+
+  if (!DATE_RE.test(from) || !DATE_RE.test(to) || from > to) {
+    return badRequest("from and to must be YYYY-MM-DD with from <= to");
+  }
+  const days =
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
+    86_400_000;
+  if (days > 120) return badRequest("date window is limited to 120 days");
+
+  if (Boolean(room) === Boolean(prof)) {
+    return badRequest("exactly one of room or prof is required");
+  }
+  if (room.length > 120 || prof.length > 120) {
+    return badRequest("query is too long");
+  }
+  if (room && !(BUILDING_CONFIG[building]?.rooms ?? []).includes(room)) {
+    return badRequest("room must be a tracked room of the given building");
+  }
+
+  try {
+    const events = await fetchBocconiEvents({
+      startDate: new Date(`${from}T00:00:00Z`),
+      endDate: new Date(`${to}T00:00:00Z`),
+      room: room || undefined,
+      query: room ? undefined : prof,
+      revalidateSeconds: UPSTREAM_REVALIDATE_SECONDS,
+    });
+
+    const matched = events.filter((event) => {
+      const inRange = event.date >= from && event.date <= to;
+      if (!inRange) return false;
+      if (room) return exactRoomMatch(room, event.rooms) && !isFreeTimeEvent(event);
+      return exactProfMatch(prof, event.teachers);
+    });
+
+    return NextResponse.json(
+      { events: matched.map(toClientEvent) },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+        },
+      },
+    );
+  } catch (error) {
+    console.error("events route: upstream failure:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch schedule data" },
+      { status: 502, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+}

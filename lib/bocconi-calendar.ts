@@ -164,14 +164,18 @@ export const buildBocconiScheduleUrl = ({
   startDate,
   endDate,
   query = "",
+  room = "",
+  type = "",
 }: {
   startDate: Date;
   endDate: Date;
   query?: string;
+  room?: string;
+  type?: string;
 }) => {
   const url = new URL(BOCONNI_SCHEDULE_URL);
-  url.searchParams.set("ric_tipo", "");
-  url.searchParams.set("ric_aula", "");
+  url.searchParams.set("ric_tipo", type);
+  url.searchParams.set("ric_aula", room);
   url.searchParams.set("ric_descriz", query);
   setDateParam(url.searchParams, "ric_da", startDate);
   setDateParam(url.searchParams, "ric_a", endDate);
@@ -185,6 +189,9 @@ export async function fetchBocconiEvents(options: {
   startDate: Date;
   endDate: Date;
   query?: string;
+  room?: string;
+  type?: string;
+  revalidateSeconds?: number;
 }): Promise<BocconiEvent[]> {
   const url = buildBocconiScheduleUrl(options);
   const response = await fetch(url, {
@@ -194,7 +201,9 @@ export async function fetchBocconiEvents(options: {
       "User-Agent": "BoLibero calendar subscription service",
     },
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-    next: { revalidate: SUBSCRIPTION_REVALIDATE_SECONDS },
+    next: {
+      revalidate: options.revalidateSeconds ?? SUBSCRIPTION_REVALIDATE_SECONDS,
+    },
   });
 
   if (!response.ok) {

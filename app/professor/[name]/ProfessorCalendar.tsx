@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { useParams } from "next/navigation";
-import { ScheduleFetcher } from "@/lib/schedule-fetcher";
-import type { ScheduleEvent } from "@/lib/schedule-fetcher";
+import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
 import { DetailHeader } from "@/components/detail-header";
 import { CalendarView } from "@/components/calendar-view";
@@ -15,7 +14,7 @@ export default function ProfessorCalendar() {
   const params = useParams();
   const name = decodeURIComponent(params.name as string);
 
-  const [profEvents, setProfEvents] = useState<ScheduleEvent[]>([]);
+  const [profEvents, setProfEvents] = useState<ClientEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
@@ -23,7 +22,6 @@ export default function ProfessorCalendar() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [language, setLanguage] = useState<Language>("en");
 
-  const fetcher = ScheduleFetcher.getInstance();
   const t = useTranslation(language);
 
   useEffect(() => {
@@ -35,10 +33,15 @@ export default function ProfessorCalendar() {
     setLoading(true);
     setError(null);
     try {
-      const startDate = startOfMonth(month);
-      const endDate = endOfMonth(month);
-      const events = await fetcher.fetchProfSchedule(name, startDate, endDate);
-      setProfEvents(events);
+      const from = startOfMonth(month).toISOString().split("T")[0];
+      const to = endOfMonth(month).toISOString().split("T")[0];
+      const query = new URLSearchParams({ prof: name, from, to });
+      const response = await fetch(`/api/events?${query.toString()}`);
+      if (!response.ok) {
+        throw new Error(`events API returned ${response.status}`);
+      }
+      const data = (await response.json()) as { events: ClientEvent[] };
+      setProfEvents(data.events);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Error loading professor schedule:", err);
@@ -62,7 +65,6 @@ export default function ProfessorCalendar() {
   };
 
   const handleRefresh = () => {
-    fetcher.clearCache();
     loadMonthSchedule(currentMonth);
   };
 
