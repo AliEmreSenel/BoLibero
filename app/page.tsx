@@ -15,7 +15,7 @@ import {
 } from "@/components/skeletons";
 import { type Language, useTranslation } from "@/lib/i18n";
 import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
-import { isBuildingOpen } from "@/lib/building-hours";
+import { isBuildingOpen, getBuildingOpeningTime } from "@/lib/building-hours";
 import { getBuildingDisplayName } from "@/lib/constants";
 import { romeDateKey, romeMinutes } from "@/lib/time";
 
@@ -380,8 +380,10 @@ export default function BSpace() {
                 room={room}
                 buildingDisplayName={fetcher.getBuildingDisplayName(building)}
                 timeSlots={getDisplayTimeSlots(building, room)}
+                slotsLabel={showOnlyStudyRooms ? t.studySessionsToday : t.freeSlotsToday}
                 isFree={isRoomCurrentlyFree(building, room)}
                 isOpen={isBuildingOpen(building, selectedDateObj)}
+                openTime={getBuildingOpeningTime(building, selectedDateObj)}
                 availableStatusLabel={availabilityStatusLabel}
                 occupiedStatusLabel={occupiedLabel}
                 buildingClosedMessage={buildingClosedMessage}
