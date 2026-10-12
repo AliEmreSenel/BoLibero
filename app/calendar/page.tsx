@@ -3,9 +3,10 @@ import { Suspense } from "react";
 import CalendarBuilder from "./CalendarBuilder";
 
 export const metadata: Metadata = {
-  title: "Class Calendar | BoLibero",
+  title: "Class Calendar",
   description:
     "Select your Bocconi classes once and subscribe to one automatically updated calendar in Google, Apple, or Outlook Calendar. No account required.",
+  alternates: { canonical: "/calendar" },
   openGraph: {
     title: "Class Calendar | BoLibero",
     description:

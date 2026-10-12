@@ -15,7 +15,10 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
-    title: SITE_TITLE,
+    title: {
+        default: SITE_TITLE,
+        template: "%s | BoLibero",
+    },
     description:
         "Find free study rooms at Bocconi University and subscribe to your class schedule in Google, Apple, or Outlook Calendar.",
     openGraph: {

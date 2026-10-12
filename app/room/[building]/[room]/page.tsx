@@ -49,20 +49,22 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const { building, room } = await params;
 
-    const { roomName, data } = resolveRoom(building, room);
+    const { buildingKey, roomName, data } = resolveRoom(building, room);
 
     const building_name = data.displayName;
     const room_name = roomName;
-    const title = `${building_name} - ${room_name} Schedule | BoLibero`
+    const title = `${room_name} · ${building_name}`
     const description = `Live schedule and real-time availability for ${room_name} in ${building_name} at Bocconi University. See when this room is free and plan your time on campus.`
+    const path = `/room/${encodeURIComponent(buildingKey)}/${encodeURIComponent(roomName)}`;
 
     return {
         title,
         description,
+        alternates: { canonical: path },
         openGraph: {
             title,
             description,
-            url: `${SITE_URL}/room/${building}/${room}`,
+            url: `${SITE_URL}${path}`,
         },
     }
 }
