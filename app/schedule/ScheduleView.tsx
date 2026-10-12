@@ -7,7 +7,7 @@ import { PageLayout } from "@/components/page-layout";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
-import { romeDateKey } from "@/lib/time";
+import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
 import { SAVED_CLASSES_KEY, SCHEDULE_SNAPSHOT_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
 import { parseISO } from "date-fns";
@@ -37,10 +37,13 @@ export default function ScheduleView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [roomChanges, setRoomChanges] = useState<RoomChange[]>([]);
+  const [canNotify, setCanNotify] = useState(false);
+  const [notifyOn, setNotifyOn] = useState(false);
   const t = useTranslation(language);
 
   useEffect(() => {
     setLanguage(loadSettings().language);
+    setCanNotify("Notification" in window);
     try {
       const saved = JSON.parse(
         window.localStorage.getItem(SAVED_CLASSES_KEY) || "[]"
@@ -154,6 +157,34 @@ export default function ScheduleView() {
     saveSettings({ ...loadSettings(), language: nextLanguage });
   };
 
+  const enableReminders = async () => {
+    const permission = await Notification.requestPermission();
+    setNotifyOn(permission === "granted");
+  };
+
+  useEffect(() => {
+    if (!notifyOn) return;
+    const check = () => {
+      const now = new Date();
+      const todayKey = romeDateKey(now);
+      const nowMinutes = romeMinutes(now);
+      for (const event of events) {
+        if (event.date !== todayKey) continue;
+        const diff = toMinutes(event.start) - nowMinutes;
+        if (diff <= 0 || diff > 15) continue;
+        const key = `bolibero-notified-${event.date}|${event.start}|${event.class}`;
+        if (window.localStorage.getItem(key)) continue;
+        window.localStorage.setItem(key, "1");
+        new Notification(t.reminderTitle, {
+          body: `${event.class} · ${event.start} · ${event.room_raw}`,
+        });
+      }
+    };
+    check();
+    const id = window.setInterval(check, 60_000);
+    return () => window.clearInterval(id);
+  }, [notifyOn, events, t]);
+
   return (
     <PageLayout language={language} onLanguageChange={handleLanguageChange}>
       <div className="container mx-auto max-w-4xl p-6">
@@ -163,6 +194,20 @@ export default function ScheduleView() {
             {t.myScheduleDescription}
           </p>
         </div>
+
+        {classes.length > 0 && canNotify && (
+          <div className="mb-6">
+            {notifyOn ? (
+              <p className="text-sm text-muted-foreground">
+                {t.remindersEnabled}
+              </p>
+            ) : (
+              <Button variant="outline" onClick={enableReminders}>
+                {t.enableReminders}
+              </Button>
+            )}
+          </div>
+        )}
 
         {classes.length === 0 ? (
           <div className="rounded-lg border py-16 text-center">
