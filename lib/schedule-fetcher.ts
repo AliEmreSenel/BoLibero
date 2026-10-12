@@ -11,7 +11,7 @@ import {
   getVisibleBuildings,
   isStudyRoomType,
 } from "./constants";
-import { normalizeTime, toMinutes, minutesToTime } from "./time";
+import { computeFreeSlots } from "./free-slots";
 import * as Sentry from "@sentry/nextjs";
 
 // Each unknown room is reported at most once per page session.
@@ -190,8 +190,6 @@ class ScheduleFetcher {
   }
 
   // Get free time slots for a room considering building hours.
-  // Busy intervals are normalized, clamped to opening hours and merged, so
-  // overlapping classes and malformed times cannot invent free slots.
   getFreeTimeSlots(
     building: string,
     room: string,
@@ -204,41 +202,14 @@ class ScheduleFetcher {
       return []; // Building is closed, no free slots
     }
 
-    // Get building-specific opening hours
-    const dayStart = getBuildingOpeningTime(building, date);
-    const dayEnd = getBuildingClosingTime(building, date);
-
     const dateStr = this.formatDateKey(date);
+    const dayEvents = events.filter((event) => event.date === dateStr);
 
-    const busy: Array<[number, number]> = [];
-    for (const event of events) {
-      if (event.date !== dateStr) continue;
-      const start = normalizeTime(event.start);
-      let end = normalizeTime(event.end);
-      if (end === "24:00") end = "23:59";
-      if (!start || !end || end <= start) continue;
-      const from = Math.max(toMinutes(start), toMinutes(dayStart));
-      const to = Math.min(toMinutes(end), toMinutes(dayEnd));
-      if (to > from) busy.push([from, to]);
-    }
-    busy.sort((a, b) => a[0] - b[0]);
-
-    const MIN_GAP_MINUTES = 15;
-    const freeSlots: Array<{ start: string; end: string }> = [];
-
-    let cursor = toMinutes(dayStart);
-    for (const [from, to] of busy) {
-      if (from - cursor > MIN_GAP_MINUTES) {
-        freeSlots.push({ start: minutesToTime(cursor), end: minutesToTime(from) });
-      }
-      cursor = Math.max(cursor, to);
-      if (cursor >= toMinutes(dayEnd)) break;
-    }
-    if (toMinutes(dayEnd) - cursor > MIN_GAP_MINUTES) {
-      freeSlots.push({ start: minutesToTime(cursor), end: dayEnd });
-    }
-
-    return freeSlots;
+    return computeFreeSlots(
+      dayEvents,
+      getBuildingOpeningTime(building, date),
+      getBuildingClosingTime(building, date)
+    );
   }
 
   // Store current schedule data for access by other methods
