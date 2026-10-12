@@ -57,6 +57,9 @@ export const translations = {
     noAvailableRooms: "No rooms available at the moment",
     noRoomsAvailableAtThisTime: "No rooms available at this time",
     futureDatesNotice: "Schedules for future dates may vary.",
+    notFoundTitle: "Page not found",
+    notFoundDescription: "The page you are looking for doesn't exist. The room may have been renamed or removed.",
+    backToRooms: "Back to rooms",
 
     // Building Hours
     buildingHours: "Building Hours",
@@ -188,6 +191,9 @@ export const translations = {
     noAvailableRooms: "Nessuna aula disponibile al momento",
     noRoomsAvailableAtThisTime: "Nessuna aula disponibile a quest'ora",
     futureDatesNotice: "Gli orari delle date future possono variare.",
+    notFoundTitle: "Pagina non trovata",
+    notFoundDescription: "La pagina che cerchi non esiste. L'aula potrebbe essere stata rinominata o rimossa.",
+    backToRooms: "Torna alle aule",
 
     // Building Hours
     buildingHours: "Orari Edificio",
