@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import {
   eventTitle,
   fetchBocconiEvents,
@@ -56,6 +57,14 @@ export async function GET() {
         a.code.localeCompare(b.code, undefined, { numeric: true }) ||
         a.section.localeCompare(b.section, undefined, { numeric: true })
     );
+
+    // An empty catalog over a 42-day window means the scrape broke, not that
+    // the semester is empty. Fail loudly (no CDN write) so the CDN keeps
+    // serving the last good catalog via stale-while-revalidate.
+    if (result.length === 0) {
+      Sentry.captureMessage("Class catalog: scraped zero classes over 42 days", "warning");
+      throw new Error("Zero classes scraped");
+    }
 
     return NextResponse.json(
       { classes: result },

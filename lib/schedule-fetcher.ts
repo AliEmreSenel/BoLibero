@@ -244,6 +244,7 @@ class ScheduleFetcher {
           Accept:
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         },
+        signal: AbortSignal.timeout(15_000),
       });
 
       if (!response.ok) {
