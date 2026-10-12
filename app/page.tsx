@@ -15,7 +15,7 @@ import {
   RoomGridSkeleton,
 } from "@/components/skeletons";
 import { type Language, useTranslation } from "@/lib/i18n";
-import { loadSettings, saveSettings } from "@/lib/settings";
+import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
 import { romeDateKey, romeMinutes } from "@/lib/time";
 
@@ -49,8 +49,8 @@ export default function BSpace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<Language>("en");
+  const [error, setError] = useState(false);
+  const [language, setLanguage] = useState<Language>(getInitialLanguage);
   // Status badges are present-tense; re-render once a minute so "now" stays true.
   const [nowTick, setNowTick] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
@@ -110,7 +110,7 @@ export default function BSpace() {
 
     const loadScheduleForSelectedDate = async () => {
       if (!cancelled) {
-        setError(null);
+        setError(false);
 
         if (isInitialRequest) {
           setIsInitialLoading(true);
@@ -130,7 +130,7 @@ export default function BSpace() {
       } catch (error) {
         console.error("Error loading selected date schedule:", error);
         if (!cancelled) {
-          setError(t.error);
+          setError(true);
         }
       } finally {
         if (!cancelled) {
@@ -147,7 +147,7 @@ export default function BSpace() {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, selectedDateObj, t.error, reloadKey]);
+  }, [fetcher, selectedDateObj, reloadKey]);
 
   /**
    * Get time slots for a room - if showOnlyStudyRooms is enabled,
@@ -354,7 +354,7 @@ export default function BSpace() {
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <span>{error}</span>
+              <span>{t.error}</span>
               <Button
                 variant="outline"
                 size="sm"
