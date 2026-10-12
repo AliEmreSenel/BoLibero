@@ -10,7 +10,7 @@ export function Footer({ language }: FooterProps) {
   const t = useTranslation(language);
 
   return (
-    <footer className="border-t bg-muted/50 mt-auto">
+    <footer className="border-t bg-muted/50 mt-auto pb-[env(safe-area-inset-bottom)]">
       <div className="container mx-auto px-6 py-8">
         <div className="flex flex-col items-center space-y-4 text-center">
           {/* Disclaimer */}

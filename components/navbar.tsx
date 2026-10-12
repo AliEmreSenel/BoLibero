@@ -15,7 +15,7 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
   const pathname = usePathname();
 
   return (
-    <header className="border-b">
+    <header className="border-b pt-[env(safe-area-inset-top)]">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between gap-3">
           <Link
@@ -23,7 +23,7 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
             <BookOpen className="h-8 w-8" />
-            <h1 className="hidden text-2xl font-bold sm:block">{t.appName}</h1>
+            <h1 className="text-lg font-bold sm:text-2xl">{t.appName}</h1>
           </Link>
           <div className="flex items-center gap-1 sm:gap-3">
             <nav aria-label={t.navigation}>

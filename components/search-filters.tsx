@@ -62,6 +62,20 @@ export function SearchFilters({
   return (
     <Card className="mb-6">
       <CardContent className="p-4 sm:p-6">
+        {showAvailabilityFilter && (
+          <div className="mb-3 flex">
+            <Button
+              variant={showOnlyAvailable && !availabilityDisabled ? "default" : "outline"}
+              onClick={() => setShowOnlyAvailable(true)}
+              disabled={availabilityDisabled}
+              title={availabilityDisabled ? t.futureDatesNotice : undefined}
+              size="sm"
+              className="rounded-full text-xs sm:text-sm"
+            >
+              {availabilityFilterLabel}
+            </Button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 sm:gap-4 mb-4 items-end">
           {/* Search */}
           <div className="space-y-1 xl:col-span-4">
@@ -74,7 +88,7 @@ export function SearchFilters({
                 placeholder={t.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-9"
+                className="h-11 pl-10 pr-9"
               />
               {searchQuery && (
                 <button
@@ -101,6 +115,7 @@ export function SearchFilters({
               min={minDate}
               max={maxDate}
               aria-label={t.day}
+              className="h-11"
             />
           </div>
 
@@ -114,6 +129,7 @@ export function SearchFilters({
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               aria-label={t.startTime}
+              className="h-11"
             />
           </div>
 
@@ -127,6 +143,7 @@ export function SearchFilters({
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               aria-label={t.endTime}
+              className="h-11"
             />
           </div>
 
@@ -138,7 +155,7 @@ export function SearchFilters({
             <Button
               onClick={onReset}
               variant="outline"
-              className="w-full"
+              className="h-11 w-full"
               disabled={resetDisabled}
             >
               {t.reset}
@@ -194,18 +211,6 @@ export function SearchFilters({
             >
               {t.allRooms}
             </Button>
-            {showAvailabilityFilter && (
-              <Button
-                variant={showOnlyAvailable && !availabilityDisabled ? "default" : "ghost"}
-                onClick={() => setShowOnlyAvailable(true)}
-                disabled={availabilityDisabled}
-                title={availabilityDisabled ? t.futureDatesNotice : undefined}
-                size="sm"
-                className="text-xs sm:text-sm"
-              >
-                {availabilityFilterLabel}
-              </Button>
-            )}
             <Button
               variant={showOnlyStudyRooms ? "default" : "ghost"}
               onClick={() => onStudyRoomsChange(!showOnlyStudyRooms)}
