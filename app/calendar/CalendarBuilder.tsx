@@ -11,6 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
+import { MAX_CLASSES } from "@/lib/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +33,6 @@ interface ClassOption {
 }
 
 const SAVED_CLASSES_KEY = "bolibero-calendar-classes";
-const MAX_CLASSES = 20;
 
 export default function CalendarBuilder() {
   const [language, setLanguage] = useState<Language>("en");

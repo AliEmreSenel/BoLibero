@@ -10,9 +10,9 @@ import {
   SUBSCRIPTION_STALE_SECONDS,
   type BocconiEvent,
 } from "@/lib/bocconi-calendar";
+import { MAX_CLASSES } from "@/lib/constants";
 
 export const revalidate = 21600;
-const MAX_CLASSES = 20;
 const UPSTREAM_CONCURRENCY = 4;
 
 const mapWithConcurrency = async <T, R>(

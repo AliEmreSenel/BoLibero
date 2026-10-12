@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import RoomCalendar from "./RoomCalendar";
 import { BUILDING_CONFIG } from "@/lib/constants";
+import { SITE_URL } from "@/lib/site";
 
 type Props = {
     params: Promise<{ building: string, room: string }>
@@ -45,7 +46,7 @@ export async function generateMetadata(
         openGraph: {
             title,
             description,
-            url: `https://bolibero.it/room/${building}/${room}`,
+            url: `${SITE_URL}/room/${building}/${room}`,
         },
     }
 }
