@@ -46,6 +46,7 @@ const parseDateValue = (dateValue: string): Date => {
 
 export default function BSpace() {
   const [scheduleData, setScheduleData] = useState<ScheduleData>({});
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(getTodayDateValue);
@@ -129,6 +130,7 @@ export default function BSpace() {
         const data = await fetcher.fetchScheduleForDate(selectedDateObj);
         if (!cancelled) {
           setScheduleData(data);
+          setLastUpdated(new Date());
           hasLoadedOnceRef.current = true;
         }
       } catch (error) {
@@ -339,6 +341,17 @@ export default function BSpace() {
           resetDisabled={!hasActiveFilters}
           t={t}
         />
+
+        {lastUpdated && (
+          <p className="-mt-2 mb-6 text-xs text-muted-foreground">
+            {t.dataSourceLine}{" "}
+            {lastUpdated.toLocaleTimeString("en-GB", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Europe/Rome",
+            })}
+          </p>
+        )}
 
         {isRefreshing && (
           <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-primary">

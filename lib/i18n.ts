@@ -145,6 +145,7 @@ export const translations = {
     resubscribeHint:
       "Changed your classes? Copy the URL and subscribe again — most apps keep the old bundle until you re-subscribe.",
     classNo: "Class no.",
+    dataSourceLine: "Data: didattica.unibocconi.it · updated",
 
     // Footer
     disclaimer:
@@ -293,6 +294,7 @@ export const translations = {
     resubscribeHint:
       "Hai cambiato le tue lezioni? Copia di nuovo l'URL e iscriviti di nuovo — la maggior parte delle app mantiene il vecchio gruppo finché non ti riscrivi.",
     classNo: "Cl. n.",
+    dataSourceLine: "Dati: didattica.unibocconi.it · aggiornati alle",
 
     // Footer
     disclaimer:

@@ -21,16 +21,18 @@ export async function generateMetadata(
         // keep the raw segment if it is not valid percent-encoding
     }
 
-    const title = `${displayName} - Class Schedule | BoLibero`;
+    const title = `${displayName} · Class Schedule`;
     const description = `Class schedule for ${displayName} at Bocconi University: dates, times and classrooms from the university timetable.`;
+    const path = `/professor/${encodeURIComponent(displayName)}`;
 
     return {
         title,
         description,
+        alternates: { canonical: path },
         openGraph: {
             title,
             description,
-            url: `${SITE_URL}/professor/${encodeURIComponent(displayName)}`,
+            url: `${SITE_URL}${path}`,
         },
     };
 }
