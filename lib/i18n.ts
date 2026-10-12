@@ -149,6 +149,9 @@ export const translations = {
     resubscribeHint:
       "Changed your classes? Copy the URL and subscribe again — most apps keep the old bundle until you re-subscribe.",
     classNo: "Class no.",
+    shareClassList: "Copy class-list link",
+    shareClassListHelp:
+      "Share this link with classmates: it opens the calendar builder with your bundle pre-selected.",
     dataSourceLine: "Data: didattica.unibocconi.it · updated",
     contact: "Contact",
     privacy: "Privacy",
@@ -322,6 +325,9 @@ export const translations = {
     resubscribeHint:
       "Hai cambiato le tue lezioni? Copia di nuovo l'URL e iscriviti di nuovo — la maggior parte delle app mantiene il vecchio gruppo finché non ti riscrivi.",
     classNo: "Cl. n.",
+    shareClassList: "Copia link elenco lezioni",
+    shareClassListHelp:
+      "Condividi questo link con i compagni: apre il costruttore di calendario con il tuo gruppo già selezionato.",
     dataSourceLine: "Dati: didattica.unibocconi.it · aggiornati alle",
     contact: "Contatti",
     privacy: "Privacy",

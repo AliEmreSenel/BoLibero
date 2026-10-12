@@ -45,6 +45,7 @@ export default function CalendarBuilder() {
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [copiedList, setCopiedList] = useState(false);
   const searchParams = useSearchParams();
   const [reloadKey, setReloadKey] = useState(0);
   const t = useTranslation(language);
@@ -147,6 +148,17 @@ export default function CalendarBuilder() {
     await navigator.clipboard.writeText(subscriptionUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2500);
+  };
+
+  const copyListLink = async () => {
+    if (!origin || selected.length === 0) return;
+    const url = new URL("/calendar", origin);
+    [...selected]
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .forEach((item) => url.searchParams.append("class", item.id));
+    await navigator.clipboard.writeText(url.toString());
+    setCopiedList(true);
+    window.setTimeout(() => setCopiedList(false), 2500);
   };
 
   const handleLanguageChange = (nextLanguage: Language) => {
@@ -295,6 +307,24 @@ export default function CalendarBuilder() {
                         </Button>
                       </div>
                     ))}
+                    <div className="pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={copyListLink}
+                      >
+                        {copiedList ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <Clipboard className="h-4 w-4" />
+                        )}
+                        {copiedList ? t.copied : t.shareClassList}
+                      </Button>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t.shareClassListHelp}
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>
