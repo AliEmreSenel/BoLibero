@@ -16,7 +16,27 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
     title: SITE_TITLE,
-    description: "Find free study rooms at Bocconi University",
+    description:
+        "Find free study rooms at Bocconi University and subscribe to your class schedule in Google, Apple, or Outlook Calendar.",
+    openGraph: {
+        title: SITE_TITLE,
+        description:
+            "Find free study rooms at Bocconi University and subscribe to your class schedule in Google, Apple, or Outlook Calendar.",
+        siteName: "BoLibero",
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: SITE_TITLE,
+        description:
+            "Find free study rooms at Bocconi University and subscribe to your class schedule.",
+    },
+    alternates: {
+        languages: {
+            en: SITE_URL,
+            it: `${SITE_URL}/?lang=it`,
+        },
+    },
 };
 
 export default function RootLayout({
