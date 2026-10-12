@@ -270,11 +270,9 @@ class ScheduleFetcher {
     const now = Date.now();
 
     if (cached && now - cached.timestamp < CACHE_DURATION) {
-      console.log("Using client cache for:", cacheKey);
       return cached.data;
     }
 
-    console.log("Fetching new data for:", cacheKey);
     const data = await this.fetchScheduleData(params);
     scheduleCache.set(cacheKey, { data, timestamp: now });
     return data;
