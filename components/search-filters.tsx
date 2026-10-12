@@ -28,6 +28,7 @@ interface SearchFiltersProps {
   minDate: string;
   maxDate: string;
   onReset: () => void;
+  resetDisabled?: boolean;
   t: Translations;
 }
 
@@ -53,6 +54,7 @@ export function SearchFilters({
   minDate,
   maxDate,
   onReset,
+  resetDisabled = false,
   t,
 }: SearchFiltersProps) {
   return (
@@ -121,7 +123,12 @@ export function SearchFilters({
             <label className="text-xs font-medium text-muted-foreground opacity-0">
               {t.reset}
             </label>
-            <Button onClick={onReset} variant="outline" className="w-full">
+            <Button
+              onClick={onReset}
+              variant="outline"
+              className="w-full"
+              disabled={resetDisabled}
+            >
               {t.reset}
             </Button>
           </div>

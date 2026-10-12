@@ -282,6 +282,15 @@ export default function BSpace() {
     }
   };
 
+  const hasActiveFilters =
+    searchQuery !== "" ||
+    selectedDate !== todayDateValue ||
+    selectedBuilding !== "all" ||
+    showOnlyAvailable ||
+    showOnlyStudyRooms ||
+    startTime !== "" ||
+    endTime !== "";
+
   const handleReset = () => {
     setSearchQuery("");
     setStartTime("");
@@ -289,6 +298,9 @@ export default function BSpace() {
     setSelectedDate(getTodayDateValue());
     setSelectedBuilding("all");
     setShowOnlyAvailable(false);
+    setShowOnlyStudyRooms(false);
+    const currentSettings = loadSettings();
+    saveSettings({ ...currentSettings, showOnlyStudyRooms: false });
   };
 
   if (isInitialLoading) {
@@ -332,6 +344,7 @@ export default function BSpace() {
           minDate={todayDateValue}
           maxDate={MAX_DATE_VALUE}
           onReset={handleReset}
+          resetDisabled={!hasActiveFilters}
           t={t}
         />
 
