@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
     // A failing class code must not 502 the whole subscription: serve the
     // classes that loaded, warn on partials, fail only when all fetches fail.
     type Group = { evs: BocconiEvent[] | null };
-    const groups = await mapWithConcurrency<Group>(
+    const groups = await mapWithConcurrency<string, Group>(
       uniqueCodes,
       UPSTREAM_CONCURRENCY,
       (code) =>
