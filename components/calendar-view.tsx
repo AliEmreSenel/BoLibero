@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { parseISO, isSameDay } from "date-fns";
 import { format } from "date-fns";
 import { it, enUS } from "date-fns/locale";
@@ -50,6 +51,15 @@ export function CalendarView({
   failed = false,
 }: CalendarViewProps) {
   const locale = language === "it" ? it : enUS;
+  const eventsRef = useRef<HTMLDivElement>(null);
+
+  // On phones the event list sits below the calendar; after picking a day,
+  // bring the list into view so the selection visibly does something.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
+      eventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedDate]);
 
   const getEventsForDate = (date: Date) => {
     return events
@@ -79,8 +89,21 @@ export function CalendarView({
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => {
+                    const today = new Date();
+                    onSelectDate(today);
+                    onMonthChange(today);
+                  }}
+                  disabled={loading}
+                >
+                  {t.today}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={onPrevMonth}
                   disabled={loading}
+                  aria-label={t.prevMonth}
                 >
                   ←
                 </Button>
@@ -89,6 +112,7 @@ export function CalendarView({
                   size="sm"
                   onClick={onNextMonth}
                   disabled={loading}
+                  aria-label={t.nextMonth}
                 >
                   →
                 </Button>
@@ -107,6 +131,12 @@ export function CalendarView({
               onSelect={(date) => date && onSelectDate(date)}
               month={currentMonth}
               onMonthChange={onMonthChange}
+              hideNavigation
+              classNames={{
+                day: "size-11",
+                day_selected:
+                  "bg-primary text-primary-foreground ring-2 ring-ring hover:bg-primary hover:text-primary-foreground",
+              }}
               modifiers={{
                 hasEvents: datesWithEvents,
               }}
@@ -126,7 +156,7 @@ export function CalendarView({
       </div>
 
       {/* Events for selected date */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2" ref={eventsRef}>
         <Card>
           <CardHeader>
             <CardTitle>

@@ -39,6 +39,8 @@ export const translations = {
 
     // Time
     today: "Today",
+    prevMonth: "Previous month",
+    nextMonth: "Next month",
     day: "Day",
     roomsFound: "rooms found",
     roomFound: "room found",
@@ -179,6 +181,8 @@ export const translations = {
 
     // Time
     today: "Oggi",
+    prevMonth: "Mese precedente",
+    nextMonth: "Mese successivo",
     day: "Giorno",
     roomsFound: "aule trovate",
     roomFound: "aula trovata",
