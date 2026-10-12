@@ -216,7 +216,7 @@ export function SearchFilters({
             </Button>
           </div>
           <div className="text-sm text-muted-foreground whitespace-nowrap">
-            {filteredCount} {filteredCount === 1 ? t.roomFound : t.roomsFound}
+            {filteredCount} {filteredCount === "1" ? t.roomFound : t.roomsFound}
           </div>
         </div>
       </CardContent>
