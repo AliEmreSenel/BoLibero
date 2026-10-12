@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/event-card";
 import type { ScheduleEvent } from "@/lib/schedule-fetcher";
 import type { Language, Translations } from "@/lib/i18n";
+import { formatDateFull } from "@/lib/i18n";
 
 interface CalendarViewProps {
   events: ScheduleEvent[];
@@ -158,7 +159,7 @@ export function CalendarView({
         <Card>
           <CardHeader>
             <CardTitle>
-              {t.eventsFor} {format(selectedDate, "EEEE, d MMMM yyyy", { locale })}
+              {t.eventsFor} {formatDateFull(selectedDate, language)}
             </CardTitle>
             <CardDescription>
               {loading
@@ -186,6 +187,7 @@ export function CalendarView({
                     event={event}
                     showRoom={showRoomInEvents}
                     showTeachers={showTeachersInEvents}
+                    language={language}
                   />
                 ))
               ) : (

@@ -6,17 +6,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ScheduleEvent } from "@/lib/schedule-fetcher";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
+import { getEventTypeLabel, type Language } from "@/lib/i18n";
 
 interface EventCardProps {
   event: ScheduleEvent;
   showRoom?: boolean;
   showTeachers?: boolean;
+  language?: Language;
 }
 
 export function EventCard({
   event,
   showRoom = true,
   showTeachers = true,
+  language = "en",
 }: EventCardProps) {
   const fetcher = ScheduleFetcher.getInstance();
 
@@ -25,7 +28,7 @@ export function EventCard({
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">{event.type}</Badge>
+            <Badge variant="outline">{getEventTypeLabel(event.type, language)}</Badge>
             {event.code && <Badge variant="secondary">{event.code}</Badge>}
           </div>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">

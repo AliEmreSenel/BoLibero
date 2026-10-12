@@ -1,5 +1,8 @@
 export type Language = "en" | "it";
 
+import { format } from "date-fns";
+import { it as itLocale, enUS } from "date-fns/locale";
+
 export const translations = {
   en: {
     // App
@@ -53,6 +56,7 @@ export const translations = {
     light: "Light",
     english: "English",
     italian: "Italian",
+    system: "System",
     showOnlyStudyRooms: "Study rooms only",
     studyRoomsDescription: "Show only officially designated study rooms",
 
@@ -200,6 +204,7 @@ export const translations = {
     light: "Chiaro",
     english: "Inglese",
     italian: "Italiano",
+    system: "Sistema",
     showOnlyStudyRooms: "Solo aule studio",
     studyRoomsDescription: "Mostra solo aule studio ufficialmente designate",
 
@@ -220,7 +225,7 @@ export const translations = {
     open: "Aperto",
     buildingClosed: "Edificio chiuso",
     allBuildingsClosed: "Tutti gli edifici sono chiusi nella data selezionata.",
-    buildingClosedToday: "Questa aula è chiuso oggi",
+    buildingClosedToday: "Questa aula è chiusa oggi",
     buildingClosedOnSelectedDate: "Questa aula è chiusa nella data selezionata",
 
     // Buildings
@@ -303,6 +308,36 @@ export function getSystemLanguage(): Language {
     const lang = navigator.language.toLowerCase();
     if (lang.startsWith("it")) return "it";
     return "en";
+}
+
+export function formatDateFull(date: Date, language: Language): string {
+  return format(date, "EEEE, d MMMM yyyy", {
+    locale: language === "it" ? it : enUS,
+  });
+}
+
+const EVENT_TYPE_LABELS: Record<Language, Record<string, string>> = {
+  en: {
+    lezione: "Lesson",
+    esame: "Exam",
+    seminario: "Seminar",
+    studio: "Study room",
+    "aula studio": "Study room",
+    "aule studio": "Study rooms",
+  },
+  it: {
+    lezione: "Lezione",
+    esame: "Esame",
+    seminario: "Seminario",
+    studio: "Aula studio",
+    "aula studio": "Aula studio",
+    "aule studio": "Aule studio",
+  },
+};
+
+export function getEventTypeLabel(type: string, language: Language): string {
+  const key = type.trim().toLowerCase();
+  return EVENT_TYPE_LABELS[language][key] ?? type;
 }
 
 export function useTranslation(language: Language) {

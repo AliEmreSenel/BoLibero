@@ -4,8 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, AlertCircle, Calendar } from "lucide-react"
 import { getBuildingStatus, formatBuildingHours } from "@/lib/building-hours"
 import { type Language } from "@/lib/i18n"
-import { format } from "date-fns"
-import { it, enUS } from "date-fns/locale"
+import { formatDateFull } from "@/lib/i18n"
 
 interface BuildingHoursProps {
   buildingKey: string
@@ -68,9 +67,7 @@ export function BuildingHours({
         <div className="space-y-3">
           {/* Date */}
           <div className="text-sm text-muted-foreground">
-            {format(date, "EEEE, d MMMM yyyy", {
-              locale: language === "it" ? it : enUS,
-            })}
+            {formatDateFull(date, language)}
           </div>
 
           {/* Hours */}

@@ -56,7 +56,7 @@ export function SettingsMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleThemeChange("system")}>
           <Monitor className="h-4 w-4 mr-2" />
-          System
+          {t.system}
           {theme === "system" && <span className="ml-auto">✓</span>}
         </DropdownMenuItem>
 
