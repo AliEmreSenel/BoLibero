@@ -24,6 +24,11 @@ interface SearchFiltersProps {
   availabilityFilterLabel: string;
   showOnlyStudyRooms: boolean;
   onStudyRoomsChange: (enabled: boolean) => void;
+  showOnlyFavorites: boolean;
+  onFavoritesChange: (enabled: boolean) => void;
+  favoriteCount: number;
+  showOnly2h: boolean;
+  on2hChange: (enabled: boolean) => void;
   visibleBuildings: Record<string, string>;
   filteredCount: string;
   minDate: string;
@@ -51,6 +56,11 @@ export function SearchFilters({
   availabilityFilterLabel,
   showOnlyStudyRooms,
   onStudyRoomsChange,
+  showOnlyFavorites,
+  onFavoritesChange,
+  favoriteCount,
+  showOnly2h,
+  on2hChange,
   visibleBuildings,
   filteredCount,
   minDate,
@@ -218,6 +228,25 @@ export function SearchFilters({
               className="text-xs sm:text-sm"
             >
               {t.showOnlyStudyRooms}
+            </Button>
+            <Button
+              variant={showOnly2h ? "default" : "ghost"}
+              onClick={() => on2hChange(!showOnly2h)}
+              size="sm"
+              className="text-xs sm:text-sm"
+            >
+              {t.free2h}
+            </Button>
+            <Button
+              variant={showOnlyFavorites ? "default" : "ghost"}
+              onClick={() => onFavoritesChange(!showOnlyFavorites)}
+              size="sm"
+              className="text-xs sm:text-sm"
+              disabled={favoriteCount === 0}
+              title={favoriteCount === 0 ? t.addFavorite : undefined}
+            >
+              {t.favorites}
+              {favoriteCount > 0 && ` (${favoriteCount})`}
             </Button>
           </div>
           <div className="text-sm text-muted-foreground whitespace-nowrap">

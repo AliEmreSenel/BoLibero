@@ -18,6 +18,9 @@ const LANGUAGE_COOKIE = "bolibero_lang";
 // builder, the My Schedule page and the class-list share link.
 export const SAVED_CLASSES_KEY = "bolibero-calendar-classes";
 
+// Room favorites for the home grid ("Leoni/Aula 1" keys).
+export const FAVORITE_ROOMS_KEY = "bolibero-favorite-rooms";
+
 export function getInitialLanguage(): Language {
   if (typeof document === "undefined") return "en";
   const match = document.cookie.match(/(?:^|;\s*)bolibero_lang=(en|it)(?:;|$)/);
