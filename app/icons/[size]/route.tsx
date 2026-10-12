@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 
 // Serves the PWA manifest icons: 192/512 plain and maskable (safe-zone
 // padded) as generated PNGs, so the repo stays free of binary assets.
-export default async function IconRoute(
-  request: NextRequest,
+export async function GET(
+  _request: NextRequest,
   { params }: { params: Promise<{ size: string }> }
 ) {
   const { size: sizeParam } = await params;
