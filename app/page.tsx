@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import type { ScheduleData } from "@/lib/schedule-fetcher";
@@ -17,13 +16,16 @@ import {
 import { type Language, useTranslation } from "@/lib/i18n";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { isBuildingOpen } from "@/lib/building-hours";
+import { romeDateKey, romeMinutes } from "@/lib/time";
 
 interface TimeSlot {
   start: string;
   end: string;
 }
 
-const getTodayDateValue = () => format(new Date(), "yyyy-MM-dd");
+const MAX_RANGE_DAYS = 90;
+
+const getTodayDateValue = () => romeDateKey();
 
 const parseDateValue = (dateValue: string): Date => {
   const [year, month, day] = dateValue.split("-").map(Number);
@@ -48,6 +50,8 @@ export default function BSpace() {
   const [endTime, setEndTime] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<Language>("en");
+  // Status badges are present-tense; re-render once a minute so "now" stays true.
+  const [nowTick, setNowTick] = useState(0);
 
   const fetcher = ScheduleFetcher.getInstance();
   const hasLoadedOnceRef = useRef(false);
@@ -55,7 +59,10 @@ export default function BSpace() {
   const todayDateValue = getTodayDateValue();
   const isSelectedDateToday = selectedDate === todayDateValue;
   const isFutureDate = selectedDate > todayDateValue;
-  const showAvailabilityFilter = !isFutureDate;
+  const isPastDate = selectedDate < todayDateValue;
+  // Present-tense availability only describes today; on other dates the card
+  // badges would assert a "now" that is already fixed in the past.
+  const showAvailabilityFilter = isSelectedDateToday;
   const availabilityFilterLabel = isSelectedDateToday
     ? t.availableNow
     : t.availableAtSelectedTime;
@@ -88,6 +95,11 @@ export default function BSpace() {
     const loadedSettings = loadSettings();
     setLanguage(loadedSettings.language);
     setShowOnlyStudyRooms(loadedSettings.showOnlyStudyRooms);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((tick) => tick + 1), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -135,11 +147,6 @@ export default function BSpace() {
     };
   }, [fetcher, selectedDateObj, t.error]);
 
-  const getCurrentTime = () => {
-    const now = new Date();
-    return format(now, "HH:mm");
-  };
-
   /**
    * Get time slots for a room - if showOnlyStudyRooms is enabled,
    * returns only the official study room time slots
@@ -151,21 +158,15 @@ export default function BSpace() {
     return fetcher.getFreeTimeSlots(building, room, selectedDateObj);
   };
 
-  const getFreeTimeSlots = (building: string, room: string): TimeSlot[] => {
-    return fetcher.getFreeTimeSlots(building, room, selectedDateObj);
-  };
-
   const isRoomCurrentlyFree = (building: string, room: string) => {
     // Check if building is open on selected date
     if (!isBuildingOpen(building, selectedDateObj)) {
       return false;
     }
 
-    const currentTime = getCurrentTime();
-    const [currentHour, currentMin] = currentTime.split(":").map(Number);
-    const currentMinutes = currentHour * 60 + currentMin;
+    const currentMinutes = romeMinutes();
 
-    const todayFree = getFreeTimeSlots(building, room);
+    const todayFree = getDisplayTimeSlots(building, room);
 
     return todayFree.some((event) => {
       const [startHour, startMin] = event.start.split(":").map(Number);
@@ -185,7 +186,7 @@ export default function BSpace() {
   ): boolean => {
     if (!startTime && !endTime) return true;
 
-    const freeSlots = getFreeTimeSlots(building, room);
+    const freeSlots = getDisplayTimeSlots(building, room);
     const searchStart = startTime;
     const searchEnd = endTime;
 
@@ -241,6 +242,7 @@ export default function BSpace() {
     endTime,
     selectedDate,
     scheduleData,
+    nowTick,
   ]);
 
   const displayedFilteredCount = isRefreshing ? 0 : filteredRooms.length;
@@ -309,6 +311,8 @@ export default function BSpace() {
           onStudyRoomsChange={handleStudyRoomsChange}
           visibleBuildings={visibleBuildings}
           filteredCount={displayedFilteredCount}
+          minDate={todayDateValue}
+          maxDate={romeDateKey(new Date(Date.now() + MAX_RANGE_DAYS * 86_400_000))}
           onReset={handleReset}
           t={t}
         />
@@ -358,6 +362,7 @@ export default function BSpace() {
                 availableStatusLabel={availabilityStatusLabel}
                 occupiedStatusLabel={occupiedLabel}
                 buildingClosedMessage={buildingClosedMessage}
+                showStatus={!isPastDate}
                 t={t}
               />
             ))}

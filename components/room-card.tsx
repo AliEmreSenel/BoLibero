@@ -22,6 +22,7 @@ interface RoomCardProps {
   availableStatusLabel: string;
   occupiedStatusLabel: string;
   buildingClosedMessage: string;
+  showStatus?: boolean;
   t: Translations;
 }
 
@@ -35,6 +36,7 @@ export function RoomCard({
   availableStatusLabel,
   occupiedStatusLabel,
   buildingClosedMessage,
+  showStatus = true,
   t,
 }: RoomCardProps) {
   return (
@@ -76,15 +78,17 @@ export function RoomCard({
               </div>
 
               {/* Room Status */}
-              <div className="mb-4">
-                <div
-                  className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
-                >
-                  {isFree
-                    ? `✓ ${availableStatusLabel}`
-                    : `✗ ${occupiedStatusLabel}`}
+              {showStatus && (
+                <div className="mb-4">
+                  <div
+                    className={`text-sm font-medium ${isFree ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {isFree
+                      ? `✓ ${availableStatusLabel}`
+                      : `✗ ${occupiedStatusLabel}`}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
         </div>

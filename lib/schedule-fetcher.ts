@@ -29,11 +29,15 @@ interface ScheduleData {
 // Thin client of /api/events: the server owns fetching and parsing
 // (parseBocconiSchedule). This module only organizes events into the
 // building/room grid and derives free/study slots for the home grid.
-const dayCache = new Map<string, { events: ScheduleEvent[]; timestamp: number }>();
 const CACHE_DURATION = 5 * 60 * 1000;
+const MAX_CACHED_DAYS = 14;
 
 class ScheduleFetcher {
   private static instance: ScheduleFetcher;
+
+  // Instance state, bounded: on a long-lived tab the day cache and study-slot
+  // maps used to grow for the life of the page.
+  private dayCache = new Map<string, { events: ScheduleEvent[]; timestamp: number }>();
 
   private constructor() {}
 
@@ -52,7 +56,7 @@ class ScheduleFetcher {
   }
 
   private async fetchDay(dateKey: string): Promise<ScheduleEvent[]> {
-    const cached = dayCache.get(dateKey);
+    const cached = this.dayCache.get(dateKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return cached.events;
     }
@@ -64,7 +68,11 @@ class ScheduleFetcher {
       );
     }
     const data = (await response.json()) as { events: ScheduleEvent[] };
-    dayCache.set(dateKey, { events: data.events, timestamp: Date.now() });
+    if (this.dayCache.size >= MAX_CACHED_DAYS) {
+      const oldest = this.dayCache.keys().next().value;
+      if (oldest !== undefined) this.dayCache.delete(oldest);
+    }
+    this.dayCache.set(dateKey, { events: data.events, timestamp: Date.now() });
     return data.events;
   }
 
@@ -134,6 +142,15 @@ class ScheduleFetcher {
 
     const organized = this.organizeSchedule(scheduleItems);
     this.currentScheduleData = organized;
+
+    // Rebuild the study-room set from retained slots so it reflects the
+    // cached window instead of accumulating forever across date changes.
+    this.studyRooms = new Set(
+      [...this.studyRoomSlots.keys()].map(
+        (key) => key.slice(0, key.lastIndexOf(":"))
+      )
+    );
+
     return organized;
   }
 
@@ -307,7 +324,7 @@ class ScheduleFetcher {
 
   // Clear cache (useful for manual refresh)
   clearCache() {
-    dayCache.clear();
+    this.dayCache.clear();
     this.studyRooms.clear();
     this.studyRoomSlots.clear();
   }
