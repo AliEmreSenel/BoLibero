@@ -14,75 +14,64 @@ export interface BuildingHoursConfig {
     [buildingKey: string]: BuildingHours;
 }
 
+// Italian national holidays: the whole campus is closed.
+const NATIONAL_CLOSURES: { [date: string]: null } = {
+    "2026-01-01": null,
+    "2026-04-05": null, // Easter
+    "2026-04-06": null, // Easter Monday
+    "2026-04-25": null, // Liberation Day
+    "2026-05-01": null, // Labour Day
+    "2026-06-02": null, // Republic Day
+    "2026-08-15": null, // Assumption
+    "2026-11-01": null, // All Saints
+    "2026-12-08": null, // Immaculate Conception
+    "2026-12-25": null,
+    "2026-12-26": null,
+};
+
+// Inclusive closed-day range, so the winter break list is one line per building.
+const closedRange = (start: string, end: string): { [date: string]: null } => {
+    const days: { [date: string]: null } = {};
+    for (const d = new Date(`${start}T00:00:00Z`); d <= new Date(`${end}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
+        days[d.toISOString().split("T")[0]] = null;
+    }
+    return days;
+};
+
+const sharedClosures = {
+    ...NATIONAL_CLOSURES,
+    ...closedRange("2025-12-24", "2026-01-04"),
+    "2025-12-08": null,
+    "2026-01-06": null,
+};
+
 // Default building hours configuration
 export const BUILDING_HOURS: BuildingHoursConfig = {
     "Sarfatti 25": {
         normal: { start: "08:00", end: "20:00" },
         saturday: { start: "08:00", end: "18:00" },
-        holidays: {
-            "2025-12-08": null,
-            "2025-12-24": null,
-            "2025-12-25": null,
-            "2025-12-26": null,
-            "2025-12-27": null,
-            "2025-12-28": null,
-            "2025-12-29": null,
-            "2025-12-30": null,
-            "2025-12-31": null,
-            "2026-01-01": null,
-            "2026-01-02": null,
-            "2026-01-03": null,
-            "2026-01-04": null,
-            "2026-01-06": null
-        },
+        holidays: { ...sharedClosures },
         specialDates: {},
     },
     "Sraffa 13": {
         normal: { start: "08:00", end: "20:00" },
         saturday: { start: "08:00", end: "13:00" },
-        holidays: {
-            "2025-12-08": null,
-            "2025-12-22": null,
-            "2025-12-23": null,
-            "2025-12-24": null,
-            "2025-12-25": null,
-            "2025-12-26": null,
-            "2025-12-27": null,
-            "2025-12-28": null,
-            "2025-12-29": null,
-            "2025-12-30": null,
-            "2025-12-31": null,
-            "2026-01-01": null,
-            "2026-01-02": null,
-            "2026-01-03": null,
-            "2026-01-04": null,
-            "2026-01-05": null,
-            "2026-01-06": null
-        },
+        holidays: { ...sharedClosures, ...closedRange("2025-12-22", "2025-12-23"), "2026-01-05": null },
         specialDates: {},
     },
     Roentgen: {
         normal: { start: "08:00", end: "21:00" },
         saturday: { start: "00:00", end: "00:00" },
-        holidays: {
-            "2025-12-08": null,
-            "2025-12-24": null,
-            "2025-12-25": null,
-            "2025-12-26": null,
-            "2025-12-27": null,
-            "2025-12-28": null,
-            "2025-12-29": null,
-            "2025-12-30": null,
-            "2025-12-31": null,
-            "2026-01-01": null,
-            "2026-01-02": null,
-            "2026-01-03": null,
-            "2026-01-04": null,
-            "2026-01-06": null
-        },
+        holidays: { ...sharedClosures },
         specialDates: {},
     },
 };
+
+// Holiday keys are calendar days in Rome, so the lookup key must be the
+// LOCAL date, not the UTC date (toISOString shifts late-evening requests
+// to the next day and shows the wrong hours).
+const localDateKey = (date: Date): string =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 export function getBuildingHours(
     buildingKey: string,
@@ -94,7 +83,7 @@ export function getBuildingHours(
         return { start: "08:00", end: "20:00" };
     }
 
-    const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD format
+    const dateStr = localDateKey(date);
 
     // Check for sunday
 
@@ -167,7 +156,7 @@ export function getBuildingStatus(
         };
     }
 
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = localDateKey(date);
     const hours = getBuildingHours(buildingKey, date);
 
     if (!hours) {

@@ -66,6 +66,7 @@ export const translations = {
     closed: "Closed",
     open: "Open",
     buildingClosed: "Building is closed",
+    allBuildingsClosed: "All buildings are closed on the selected date.",
     buildingClosedToday: "This classroom is closed today",
     buildingClosedOnSelectedDate: "This classroom is closed on the selected date",
 
@@ -197,6 +198,7 @@ export const translations = {
     closed: "Chiuso",
     open: "Aperto",
     buildingClosed: "Edificio chiuso",
+    allBuildingsClosed: "Tutti gli edifici sono chiusi nella data selezionata.",
     buildingClosedToday: "Questa aula è chiuso oggi",
     buildingClosedOnSelectedDate: "Questa aula è chiusa nella data selezionata",
 

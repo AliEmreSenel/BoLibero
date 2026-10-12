@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { useParams } from "next/navigation";
 import { getBuildingDisplayName } from "@/lib/constants";
+import { BuildingHours } from "@/components/building-hours";
 import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
 import { DetailHeader } from "@/components/detail-header";
@@ -90,6 +91,16 @@ export default function RoomCalendar() {
           t={t}
           onRefresh={handleRefresh}
         />
+
+        <div className="mb-6">
+          <BuildingHours
+            buildingKey={building}
+            buildingName={getBuildingDisplayName(building)}
+            date={selectedDate}
+            language={language}
+            compact
+          />
+        </div>
 
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">

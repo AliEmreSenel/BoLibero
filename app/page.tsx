@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import type { ScheduleData } from "@/lib/schedule-fetcher";
 import { PageLayout } from "@/components/page-layout";
+import { isBuildingOpen } from "@/lib/building-hours";
 import { PageHeader } from "@/components/page-header";
 import { SearchFilters } from "@/components/search-filters";
 import { RoomCard } from "@/components/room-card";
@@ -74,6 +75,13 @@ export default function BSpace() {
   const selectedDateObj = useMemo(
     () => parseDateValue(selectedDate),
     [selectedDate]
+  );
+  const allBuildingsClosed = useMemo(
+    () => {
+      const keys = Object.keys(fetcher.getVisibleBuildings());
+      return keys.length > 0 && keys.every((key) => !isBuildingOpen(key, selectedDateObj));
+    },
+    [selectedDateObj]
   );
 
   // Load settings on mount
@@ -312,6 +320,12 @@ export default function BSpace() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>{t.loading}</span>
             </div>
+          </div>
+        )}
+
+        {allBuildingsClosed && (
+          <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {t.allBuildingsClosed}
           </div>
         )}
 
