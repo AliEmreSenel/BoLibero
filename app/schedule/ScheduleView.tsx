@@ -10,6 +10,7 @@ import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey } from "@/lib/time";
 import { SAVED_CLASSES_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
+import { parseISO } from "date-fns";
 
 interface BundleClass {
   id: string;
@@ -87,13 +88,9 @@ export default function ScheduleView() {
       list.push(event);
       byDate.set(event.date, list);
     }
-    const result: { date: Date; events: ClientEvent[] }[] = [];
-    for (let offset = 0; offset <= DAYS_AHEAD; offset += 1) {
-      const date = new Date(Date.now() + offset * 86_400_000);
-      const key = romeDateKey(date);
-      result.push({ date, events: byDate.get(key) ?? [] });
-    }
-    return result.filter((day) => day.events.length > 0);
+    return [...byDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, dayEvents]) => ({ date: parseISO(date), events: dayEvents }));
   }, [events]);
 
   const handleLanguageChange = (nextLanguage: Language) => {
