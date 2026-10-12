@@ -122,6 +122,7 @@ export default function RoomCalendar() {
           showRoomInEvents={false}
           showTeachersInEvents={true}
           emptyStateMessage={t.roomFreeAllDay}
+          failed={Boolean(error)}
         />
       </div>
     </PageLayout>

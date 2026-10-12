@@ -30,6 +30,7 @@ interface CalendarViewProps {
   showRoomInEvents?: boolean;
   showTeachersInEvents?: boolean;
   emptyStateMessage?: string;
+  failed?: boolean;
 }
 
 export function CalendarView({
@@ -46,6 +47,7 @@ export function CalendarView({
   showRoomInEvents = true,
   showTeachersInEvents = true,
   emptyStateMessage,
+  failed = false,
 }: CalendarViewProps) {
   const locale = language === "it" ? it : enUS;
 
@@ -163,10 +165,16 @@ export function CalendarView({
                   <div className="h-12 w-12 mx-auto mb-4 opacity-50 text-muted-foreground">
                     📅
                   </div>
-                  <p className="text-muted-foreground">{t.noEventsScheduled}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {emptyStateMessage || t.roomFreeAllDay}
-                  </p>
+                  {failed ? (
+                    <p className="text-destructive">{t.error}</p>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground">{t.noEventsScheduled}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {emptyStateMessage || t.roomFreeAllDay}
+                      </p>
+                    </>
+                  )}
                   <p className="text-xs text-muted-foreground mt-4">
                     {t.scheduleUpdatedRegularly}
                   </p>

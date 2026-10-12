@@ -238,6 +238,16 @@ export default function BSpace() {
 
   const displayedFilteredCount = isRefreshing ? 0 : filteredRooms.length;
 
+  // A scrape that returns zero events campus-wide means "no data", not "all
+  // rooms free". Rendering the full grid in that case shows every room with a
+  // full-day free slot, which sends students to rooms they cannot verify.
+  const campusEventCount = Object.values(scheduleData).reduce(
+    (sum, rooms) =>
+      sum + Object.values(rooms).reduce((s, evs) => s + evs.length, 0),
+    0
+  );
+  const showNoDataState = !error && campusEventCount === 0;
+
   const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
     const currentSettings = loadSettings();
@@ -331,6 +341,10 @@ export default function BSpace() {
         {/* Room Cards Grid */}
         {isRefreshing ? (
           <RoomGridSkeleton count={9} />
+        ) : showNoDataState ? (
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center text-destructive">
+            {t.noDataForDate}
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRooms.map(({ building, room }) => (
