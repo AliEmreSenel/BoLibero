@@ -16,6 +16,9 @@ import { normalizeTime } from "@/lib/time";
 export const revalidate = 21600;
 const UPSTREAM_CONCURRENCY = 4;
 
+const ICS_DISCLAIMER =
+  "BoLibero · Unofficial: scraped from the public Bocconi University timetable; times may change without notice.";
+
 const mapWithConcurrency = async <T, R>(
   items: T[],
   limit: number,
@@ -127,6 +130,7 @@ function createCalendar(events: BocconiEvent[]) {
       `${event.code} ${event.className}`.trim(),
       event.type,
       event.teacherRaw && `Teachers: ${event.teacherRaw}`,
+      ICS_DISCLAIMER,
     ]
       .filter(Boolean)
       .join("\n");

@@ -354,6 +354,10 @@ export default function CalendarBuilder() {
             </Card>
           </div>
         </div>
+
+        <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
+          {t.disclaimer}
+        </p>
       </div>
     </PageLayout>
   );
