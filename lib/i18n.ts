@@ -312,7 +312,7 @@ export function getSystemLanguage(): Language {
 
 export function formatDateFull(date: Date, language: Language): string {
   return format(date, "EEEE, d MMMM yyyy", {
-    locale: language === "it" ? it : enUS,
+    locale: language === "it" ? itLocale : enUS,
   });
 }
 
