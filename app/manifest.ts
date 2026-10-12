@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
         description: 'Find free study rooms at Bocconi University',
         start_url: '/',
         display: 'standalone',
-        background_color: '#fff',
-        theme_color: '#fff',
+        background_color: '#020617',
+        theme_color: '#020617',
         icons: [
             {
                 src: '/favicon.ico',
