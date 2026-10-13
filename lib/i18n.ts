@@ -37,6 +37,7 @@ export const translations = {
     occupiedNow: "Occupied now",
     occupiedAtThisTime: "Occupied at this time",
     moreInfo: "More info",
+    freeAllDayUnlockWarning: "This room is free all day — it might not be unlocked",
     capacity: "Capacity",
     seats: "seats",
 
@@ -249,6 +250,7 @@ export const translations = {
     occupiedNow: "Occupata ora",
     occupiedAtThisTime: "Occupata a quest'ora",
     moreInfo: "Maggiori info",
+    freeAllDayUnlockWarning: "Questa aula è libera tutto il giorno — potrebbe non essere aperta",
     capacity: "Capienza",
     seats: "posti",
 
