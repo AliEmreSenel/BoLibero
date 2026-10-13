@@ -1,8 +1,4 @@
-import {
-  isEventTypeFreeTime,
-  isStudyRoomType,
-  normalizeEntity,
-} from "@/lib/constants";
+import { isStudyRoomEvent, normalizeEntity } from "@/lib/constants";
 import type { BocconiEvent, BocconiRoom } from "@/lib/bocconi-calendar";
 
 // JSON shape consumed by the room/professor pages and the home grid. Mirrors
@@ -46,8 +42,5 @@ export const toClientEvent = (event: BocconiEvent): ClientEvent => ({
   rooms: event.rooms,
   teacher_raw: event.teacherRaw,
   room_raw: event.roomRaw,
-  isStudyRoom: isStudyRoomType(event.type),
+  isStudyRoom: isStudyRoomEvent(event),
 });
-
-export const isFreeTimeEvent = (event: BocconiEvent) =>
-  isEventTypeFreeTime(event.type);

@@ -238,22 +238,24 @@ export const MAX_CLASSES = 20;
 export const normalizeEntity = (value: string): string =>
   value.replace(/\s+/g, " ").trim().toLowerCase();
 
-/**
- * Check if an event type indicates the room is free for general use.
- * Type only: the description is a free-text class title and substring rules
- * there made real classes look like free time.
- */
-export function isEventTypeFreeTime(eventType: string): boolean {
-  const type = normalizeEntity(eventType);
-  return type === "aule studio" || type === "aula studio" || type === "studio";
+// Upstream marks study-room events with "Aule studio" as the whole
+// description (the type cell then says "Attivita'"); older feeds carry the
+// marker in the type cell. Only exact whole-value matches count: substring
+// rules on the free-text class title made real classes look like free time.
+const STUDY_MARKERS = ["aule studio", "aula studio"];
+
+const hasStudyMarker = (event: { type: string; description: string }) =>
+  STUDY_MARKERS.includes(normalizeEntity(event.type)) ||
+  STUDY_MARKERS.includes(normalizeEntity(event.description));
+
+/** Event marking the room as free for general use. */
+export function isFreeTimeEvent(event: { type: string; description: string }): boolean {
+  return hasStudyMarker(event) || normalizeEntity(event.type) === "studio";
 }
 
-/**
- * Check if an event type indicates the room is an official study room
- */
-export function isStudyRoomType(eventType: string): boolean {
-  const type = normalizeEntity(eventType);
-  return type === "aule studio" || type === "aula studio";
+/** Event marking the room as an official study room. */
+export function isStudyRoomEvent(event: { type: string; description: string }): boolean {
+  return hasStudyMarker(event);
 }
 
 /**

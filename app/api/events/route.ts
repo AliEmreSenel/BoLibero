@@ -5,10 +5,10 @@ import {
   parseClassId,
 } from "@/lib/bocconi-calendar";
 import { BUILDING_CONFIG } from "@/lib/constants";
+import { isFreeTimeEvent } from "@/lib/constants";
 import {
   exactProfMatch,
   exactRoomMatch,
-  isFreeTimeEvent,
   toClientEvent,
 } from "@/lib/event-matching";
 

@@ -5,11 +5,11 @@ import {
 } from "./building-hours";
 import {
   BUILDINGS,
-  isEventTypeFreeTime,
+  isFreeTimeEvent,
   isValidRoom,
   getBuildingDisplayName,
   getVisibleBuildings,
-  isStudyRoomType,
+  isStudyRoomEvent,
 } from "./constants";
 import { computeFreeSlots } from "./free-slots";
 import * as Sentry from "@sentry/nextjs";
@@ -93,7 +93,7 @@ class ScheduleFetcher {
     // BUT exclude events that indicate free time
     for (const item of scheduleItems) {
       // Skip events that indicate the room is available for general use
-      if (isEventTypeFreeTime(item.type)) {
+      if (isFreeTimeEvent(item)) {
         continue;
       }
 
@@ -164,7 +164,7 @@ class ScheduleFetcher {
    */
   private updateStudyRooms(scheduleItems: ScheduleEvent[]): void {
     for (const item of scheduleItems) {
-      if (isStudyRoomType(item.type)) {
+      if (isStudyRoomEvent(item)) {
         for (const { roomName, building } of item.rooms) {
           if (isValidRoom(roomName)) {
             // Track that this room is a study room
