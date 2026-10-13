@@ -72,20 +72,6 @@ export function SearchFilters({
   return (
     <Card className="mb-6">
       <CardContent className="p-4 sm:p-6">
-        {showAvailabilityFilter && (
-          <div className="mb-3 flex">
-            <Button
-              variant={showOnlyAvailable && !availabilityDisabled ? "default" : "outline"}
-              onClick={() => setShowOnlyAvailable(true)}
-              disabled={availabilityDisabled}
-              title={availabilityDisabled ? t.futureDatesNotice : undefined}
-              size="sm"
-              className="rounded-full text-xs sm:text-sm"
-            >
-              {availabilityFilterLabel}
-            </Button>
-          </div>
-        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-3 sm:gap-4 mb-4 items-end">
           {/* Search */}
           <div className="space-y-1 xl:col-span-4">
@@ -213,6 +199,18 @@ export function SearchFilters({
         {/* Filter Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex flex-wrap gap-2">
+            {showAvailabilityFilter && (
+              <Button
+                variant={showOnlyAvailable && !availabilityDisabled ? "default" : "ghost"}
+                onClick={() => setShowOnlyAvailable(!showOnlyAvailable)}
+                disabled={availabilityDisabled}
+                title={availabilityDisabled ? t.futureDatesNotice : undefined}
+                size="sm"
+                className="text-xs sm:text-sm"
+              >
+                {availabilityFilterLabel}
+              </Button>
+            )}
             <Button
               variant={!showOnlyAvailable ? "default" : "ghost"}
               onClick={() => setShowOnlyAvailable(false)}
