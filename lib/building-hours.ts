@@ -48,14 +48,14 @@ const sharedClosures = {
 // Default building hours configuration
 export const BUILDING_HOURS: BuildingHoursConfig = {
     "Sarfatti 25": {
-        normal: { start: "08:00", end: "20:00" },
-        saturday: { start: "08:00", end: "18:00" },
+        normal: { start: "08:30", end: "20:00" },
+        saturday: { start: "08:30", end: "18:00" },
         holidays: { ...sharedClosures },
         specialDates: {},
     },
     "Sraffa 13": {
-        normal: { start: "08:00", end: "20:00" },
-        saturday: { start: "08:00", end: "13:00" },
+        normal: { start: "08:30", end: "20:00" },
+        saturday: { start: "08:30", end: "13:00" },
         holidays: { ...sharedClosures, ...closedRange("2025-12-22", "2025-12-23"), "2026-01-05": null },
         specialDates: {},
     },

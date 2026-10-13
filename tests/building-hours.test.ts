@@ -4,14 +4,18 @@ import { getBuildingHours } from "@/lib/building-hours";
 describe("getBuildingHours", () => {
   it("returns normal hours on a regular weekday", () => {
     expect(getBuildingHours("Sarfatti 25", new Date(2026, 9, 12))).toEqual({
-      start: "08:00",
+      start: "08:30",
+      end: "20:00",
+    });
+    expect(getBuildingHours("Sraffa 13", new Date(2026, 9, 12))).toEqual({
+      start: "08:30",
       end: "20:00",
     });
   });
 
   it("returns building-specific Saturday hours", () => {
     expect(getBuildingHours("Sarfatti 25", new Date(2026, 9, 17))).toEqual({
-      start: "08:00",
+      start: "08:30",
       end: "18:00",
     });
   });
