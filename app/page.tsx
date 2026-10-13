@@ -32,6 +32,10 @@ interface TimeSlot {
 
 const MAX_RANGE_DAYS = 90;
 
+// "Available now" must be usable: a room counts as free only while it stays
+// free for at least this many more minutes.
+const MIN_FREE_NOW_MINUTES = 15;
+
 const getTodayDateValue = () => romeDateKey();
 
 // Computed once at module load; the picker window slides with page loads,
@@ -195,13 +199,13 @@ export default function BSpace() {
     const todayFree = getDisplayTimeSlots(building, room);
 
     return todayFree.some((event) => {
-      const [startHour, startMin] = event.start.split(":").map(Number);
-      const [endHour, endMin] = event.end.split(":").map(Number);
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
+      const startMinutes = toMinutes(event.start);
+      const endMinutes = toMinutes(event.end);
 
-      // 5-minute tolerance: room is considered occupied 5 minutes before class starts
-      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+      return (
+        currentMinutes >= startMinutes &&
+        currentMinutes + MIN_FREE_NOW_MINUTES <= endMinutes
+      );
     });
   };
 
