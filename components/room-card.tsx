@@ -19,6 +19,7 @@ interface RoomCardProps {
   timeSlots: TimeSlot[];
   slotsLabel: string;
   isFree: boolean;
+  isFreeAllDay: boolean;
   isOpen: boolean;
   openTime: string;
   availableStatusLabel: string;
@@ -37,6 +38,7 @@ export function RoomCard({
   timeSlots,
   slotsLabel,
   isFree,
+  isFreeAllDay,
   isOpen,
   openTime,
   availableStatusLabel,
@@ -89,6 +91,12 @@ export function RoomCard({
 
           {isOpen && (
             <>
+              {isFreeAllDay && (
+                <div className="mb-4 rounded border border-amber-300/50 bg-amber-50/80 px-3 py-2 text-xs text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
+                  {t.freeAllDayUnlockWarning}
+                </div>
+              )}
+
               {/* Time Slot Badges */}
               <div className="mb-4 min-h-[52px]">
                 <div className="text-xs font-medium text-muted-foreground mb-1.5">

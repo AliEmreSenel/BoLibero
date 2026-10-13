@@ -21,7 +21,11 @@ import {
   loadSettings,
   saveSettings,
 } from "@/lib/settings";
-import { isBuildingOpen, getBuildingOpeningTime } from "@/lib/building-hours";
+import {
+  isBuildingOpen,
+  getBuildingOpeningTime,
+  getBuildingClosingTime,
+} from "@/lib/building-hours";
 import { getBuildingDisplayName } from "@/lib/constants";
 import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
 
@@ -182,6 +186,19 @@ export default function BSpace() {
       return fetcher.getStudyRoomTimeSlots(building, room, selectedDateObj);
     }
     return fetcher.getFreeTimeSlots(building, room, selectedDateObj);
+  };
+
+  // A room free for the whole opening window is far more likely an unbooked,
+  // locked room than a lucky find, so the card warns. Official study rooms
+  // are open all day on purpose, so they are exempt.
+  const isRoomFreeAllDay = (building: string, room: string): boolean => {
+    if (!isBuildingOpen(building, selectedDateObj)) return false;
+    if (fetcher.isStudyRoom(building, room)) return false;
+    const opening = getBuildingOpeningTime(building, selectedDateObj);
+    const closing = getBuildingClosingTime(building, selectedDateObj);
+    return fetcher
+      .getFreeTimeSlots(building, room, selectedDateObj)
+      .some((slot) => slot.start <= opening && slot.end >= closing);
   };
 
   const isRoomCurrentlyFree = (building: string, room: string) => {
@@ -483,6 +500,7 @@ export default function BSpace() {
                 timeSlots={getDisplayTimeSlots(building, room)}
                 slotsLabel={showOnlyStudyRooms ? t.studySessionsToday : t.freeSlotsToday}
                 isFree={isRoomCurrentlyFree(building, room)}
+                isFreeAllDay={isRoomFreeAllDay(building, room)}
                 isOpen={isBuildingOpen(building, selectedDateObj)}
                 openTime={getBuildingOpeningTime(building, selectedDateObj)}
                 availableStatusLabel={availabilityStatusLabel}
