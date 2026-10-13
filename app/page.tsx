@@ -61,7 +61,9 @@ export default function BSpace() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(getTodayDateValue);
   const [selectedBuilding, setSelectedBuilding] = useState<string>("all");
-  const [showOnlyAvailable, setShowOnlyAvailable] = useState(false);
+  // Availability-first is the home-grid default: students open the app to
+  // find a room now. "All rooms" (and Reset) opt out for the session.
+  const [showOnlyAvailable, setShowOnlyAvailable] = useState(true);
   const [showOnlyStudyRooms, setShowOnlyStudyRooms] = useState(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [showOnly2h, setShowOnly2h] = useState(false);
@@ -362,7 +364,7 @@ export default function BSpace() {
     setEndTime("");
     setSelectedDate(getTodayDateValue());
     setSelectedBuilding("all");
-    setShowOnlyAvailable(false);
+    setShowOnlyAvailable(true);
     setShowOnlyStudyRooms(false);
     setShowOnlyFavorites(false);
     setShowOnly2h(false);
