@@ -1,3 +1,5 @@
+import { normalizeTime } from "./time";
+
 export interface BocconiRoom {
   roomName: string;
   building: string;
@@ -36,27 +38,66 @@ export const SUBSCRIPTION_STALE_SECONDS = 7 * 24 * 60 * 60;
 // so failures are fast and cacheable-as-miss instead of wedging the stack.
 export const UPSTREAM_TIMEOUT_MS = 10_000;
 
-const decodeHtmlEntities = (value: string) => {
-  const named: Record<string, string> = {
-    amp: "&",
-    apos: "'",
-    gt: ">",
-    lt: "<",
-    nbsp: " ",
-    quot: '"',
-  };
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: '"',
+  agrave: "à",
+  aacute: "á",
+  acirc: "â",
+  atilde: "ã",
+  auml: "ä",
+  aring: "å",
+  ae: "æ",
+  egrave: "è",
+  eacute: "é",
+  ecirc: "ê",
+  euml: "ë",
+  igrave: "ì",
+  iacute: "í",
+  icirc: "î",
+  iuml: "ï",
+  ntilde: "ñ",
+  ograve: "ò",
+  oacute: "ó",
+  ocirc: "ô",
+  otilde: "õ",
+  ouml: "ö",
+  oslash: "ø",
+  ugrave: "ù",
+  uacute: "ú",
+  ucirc: "û",
+  uuml: "ü",
+  ccedil: "ç",
+  szlig: "ß",
+  yacute: "ý",
+  yuml: "ÿ",
+  euro: "€",
+  sect: "§",
+  deg: "°",
+};
 
-  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity) => {
+// Out-of-range code points (e.g. &#x7FFFFFFF;) must not throw and abort the
+// whole parse; keep the raw match instead.
+const safeCodePoint = (codePoint: number, fallback: string) =>
+  codePoint >= 0 && codePoint <= 0x10ffff
+    ? String.fromCodePoint(codePoint)
+    : fallback;
+
+const decodeHtmlEntities = (value: string) =>
+  value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity) => {
     const normalized = String(entity).toLowerCase();
     if (normalized.startsWith("#x")) {
-      return String.fromCodePoint(Number.parseInt(normalized.slice(2), 16));
+      return safeCodePoint(Number.parseInt(normalized.slice(2), 16), match);
     }
     if (normalized.startsWith("#")) {
-      return String.fromCodePoint(Number.parseInt(normalized.slice(1), 10));
+      return safeCodePoint(Number.parseInt(normalized.slice(1), 10), match);
     }
-    return named[normalized] ?? match;
+    return NAMED_ENTITIES[normalized] ?? match;
   });
-};
 
 const htmlToText = (html: string, preserveBreaks = false) => {
   const breaks = preserveBreaks ? "\n" : " ";
@@ -99,7 +140,7 @@ export const parseClassId = (id: string): ClassOption | null => {
   const code = id.slice(0, separator).trim();
   const section = id.slice(separator + 2).trim();
   if (!/^[a-z0-9._/-]{1,40}$/i.test(code)) return null;
-  if (section && !/^Cl\.\d+$/i.test(section)) return null;
+  if (section && !/^(?:Cl\.|Classe)\s*[a-z0-9]+$/i.test(section)) return null;
 
   return { id: makeClassId(code, section), code, section, title: "" };
 };
@@ -120,22 +161,24 @@ export function parseBocconiSchedule(html: string): BocconiEvent[] {
 
     const codeStrong = cells[4].match(/<strong\b[^>]*>([\s\S]*?)<\/strong>/i);
     const code = htmlToText(codeStrong?.[1] ?? cells[4])
-      .replace(/\s*Cl\.\d+.*/i, "")
+      .replace(/\s*(?:Cl\.|Classe)\s*[a-z0-9]+.*/i, "")
       .trim();
-    const section = htmlToText(cells[4]).match(/Cl\.\d+/i)?.[0] ?? "";
+    const section = htmlToText(cells[4]).match(/(?:Cl\.|Classe)\s*[a-z0-9]+/i)?.[0] ?? "";
     const teacherRaw = htmlToText(cells[6]);
     const roomRaw = htmlToText(cells[7]);
+    const rawStart = htmlToText(cells[1]);
+    const rawEnd = htmlToText(cells[2]);
 
     events.push({
       date: `${dateParts[3]}-${dateParts[2].padStart(2, "0")}-${dateParts[1].padStart(2, "0")}`,
-      start: htmlToText(cells[1]),
-      end: htmlToText(cells[2]),
+      start: normalizeTime(rawStart) ?? rawStart,
+      end: normalizeTime(rawEnd) ?? rawEnd,
       type: htmlToText(cells[3]),
       code,
       className: section,
       description: htmlToText(cells[5], true),
       teachers: teacherRaw
-        .split("-")
+        .split(/(?<=\.)\s*-\s*/)
         .map((teacher) => teacher.trim())
         .filter(Boolean),
       rooms: parseRooms(roomRaw),

@@ -12,6 +12,12 @@ describe("class ids", () => {
     expect(parseClassId("30062::")).toMatchObject({ code: "30062", section: "" });
   });
 
+  it("accepts sections with a space or Classe prefix", () => {
+    const id = makeClassId("30062", "Cl. 43");
+    expect(parseClassId(id)).toMatchObject({ code: "30062", section: "Cl. 43" });
+    expect(parseClassId("30062::Classe 4")).toMatchObject({ code: "30062", section: "Classe 4" });
+  });
+
   it("rejects malformed input", () => {
     expect(parseClassId("30062")).toBeNull();
     expect(parseClassId("::Cl.43")).toBeNull();
