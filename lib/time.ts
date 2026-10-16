@@ -5,7 +5,8 @@ export const normalizeTime = (time: string): string | null => {
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (hours > 24 || minutes > 59) return null;
+  // "24:00" is a valid closing time; "24:01"+ is not a time of day.
+  if (hours > 24 || (hours === 24 && minutes > 0) || minutes > 59) return null;
   return `${String(hours).padStart(2, "0")}:${match[2]}`;
 };
 
