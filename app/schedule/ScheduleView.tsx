@@ -8,8 +8,15 @@ import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey, romeMinutes, normalizeTime, toMinutes } from "@/lib/time";
-import { SAVED_CLASSES_KEY, SCHEDULE_SNAPSHOT_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
-import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
+import {
+  NOTIFIED_EVENTS_KEY,
+  SAVED_CLASSES_KEY,
+  SCHEDULE_SNAPSHOT_KEY,
+  safeGetItem,
+  safeSetItem,
+  useLanguage,
+} from "@/lib/settings";
+import { formatDateFull, useTranslation } from "@/lib/i18n";
 import { parseISO } from "date-fns";
 
 interface BundleClass {
@@ -30,8 +37,19 @@ const eventIdentity = (event: ClientEvent) =>
 
 const DAYS_AHEAD = 7;
 
+const notifiedIds = (): string[] => {
+  try {
+    const saved = JSON.parse(safeGetItem(NOTIFIED_EVENTS_KEY) || "[]");
+    return Array.isArray(saved)
+      ? saved.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 export default function ScheduleView() {
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
   const [classes, setClasses] = useState<BundleClass[]>([]);
   const [events, setEvents] = useState<ClientEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,12 +60,9 @@ export default function ScheduleView() {
   const t = useTranslation(language);
 
   useEffect(() => {
-    setLanguage(loadSettings().language);
     setCanNotify("Notification" in window);
     try {
-      const saved = JSON.parse(
-        window.localStorage.getItem(SAVED_CLASSES_KEY) || "[]"
-      );
+      const saved = JSON.parse(safeGetItem(SAVED_CLASSES_KEY) || "[]");
       if (Array.isArray(saved)) setClasses(saved);
     } catch {
       // Corrupt bundle: treat as empty.
@@ -98,9 +113,7 @@ export default function ScheduleView() {
       }
       let previous: Record<string, string> = {};
       try {
-        previous = JSON.parse(
-          window.localStorage.getItem(SCHEDULE_SNAPSHOT_KEY) || "{}"
-        );
+        previous = JSON.parse(safeGetItem(SCHEDULE_SNAPSHOT_KEY) || "{}");
       } catch {
         // Corrupt snapshot: treat as first visit.
       }
@@ -121,14 +134,7 @@ export default function ScheduleView() {
       // A partial fetch must not overwrite the snapshot: wiped rooms cause
       // missed room-change diffs and false diffs on later visits.
       if (!failed) {
-        try {
-          window.localStorage.setItem(
-            SCHEDULE_SNAPSHOT_KEY,
-            JSON.stringify(snapshot)
-          );
-        } catch {
-          // Storage unavailable: skip change detection this visit.
-        }
+        safeSetItem(SCHEDULE_SNAPSHOT_KEY, JSON.stringify(snapshot));
       }
       setRoomChanges(changes);
 
@@ -152,11 +158,6 @@ export default function ScheduleView() {
       .map(([date, dayEvents]) => ({ date: parseISO(date), events: dayEvents }));
   }, [events]);
 
-  const handleLanguageChange = (nextLanguage: Language) => {
-    setLanguage(nextLanguage);
-    saveSettings({ ...loadSettings(), language: nextLanguage });
-  };
-
   const enableReminders = async () => {
     const permission = await Notification.requestPermission();
     setNotifyOn(permission === "granted");
@@ -168,15 +169,17 @@ export default function ScheduleView() {
       const now = new Date();
       const todayKey = romeDateKey(now);
       const nowMinutes = romeMinutes(now);
+      const notified = notifiedIds().filter((id) => id.slice(0, 10) >= todayKey);
       for (const event of events) {
         if (event.date !== todayKey) continue;
         const start = normalizeTime(event.start);
         if (!start) continue;
         const diff = toMinutes(start) - nowMinutes;
         if (diff <= 0 || diff > 15) continue;
-        const key = `bolibero-notified-${event.date}|${event.start}|${event.class}`;
-        if (window.localStorage.getItem(key)) continue;
-        window.localStorage.setItem(key, "1");
+        const id = `${event.date}|${event.start}|${event.class}`;
+        if (notified.includes(id)) continue;
+        notified.push(id);
+        safeSetItem(NOTIFIED_EVENTS_KEY, JSON.stringify(notified));
         new Notification(t.reminderTitle, {
           body: `${event.class} · ${event.start} · ${event.room_raw}`,
         });
@@ -188,7 +191,7 @@ export default function ScheduleView() {
   }, [notifyOn, events, t]);
 
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto max-w-4xl p-6">
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">{t.myScheduleTitle}</h1>

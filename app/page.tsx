@@ -14,12 +14,14 @@ import {
   SearchFiltersSkeleton,
   RoomGridSkeleton,
 } from "@/components/skeletons";
-import { type Language, useTranslation } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import {
   FAVORITE_ROOMS_KEY,
-  getInitialLanguage,
   loadSettings,
+  safeGetItem,
+  safeSetItem,
   saveSettings,
+  useLanguage,
 } from "@/lib/settings";
 import {
   isBuildingOpen,
@@ -76,7 +78,7 @@ export default function BSpace() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [error, setError] = useState(false);
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
   // Status badges are present-tense; re-render once a minute so "now" stays true.
   const [nowTick, setNowTick] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
@@ -119,13 +121,9 @@ export default function BSpace() {
 
   // Load settings on mount
   useEffect(() => {
-    const loadedSettings = loadSettings();
-    setLanguage(loadedSettings.language);
-    setShowOnlyStudyRooms(loadedSettings.showOnlyStudyRooms);
+    setShowOnlyStudyRooms(loadSettings().showOnlyStudyRooms);
     try {
-      const saved = JSON.parse(
-        window.localStorage.getItem(FAVORITE_ROOMS_KEY) || "[]"
-      );
+      const saved = JSON.parse(safeGetItem(FAVORITE_ROOMS_KEY) || "[]");
       if (Array.isArray(saved)) setFavorites(saved);
     } catch {
       // Corrupt favorites list: start clean.
@@ -261,11 +259,7 @@ export default function BSpace() {
       const next = current.includes(key)
         ? current.filter((item) => item !== key)
         : [...current, key];
-      try {
-        window.localStorage.setItem(FAVORITE_ROOMS_KEY, JSON.stringify(next));
-      } catch {
-        // Storage full/unavailable: favorites stay for this session.
-      }
+      safeSetItem(FAVORITE_ROOMS_KEY, JSON.stringify(next));
       return next;
     });
   };
@@ -347,12 +341,6 @@ export default function BSpace() {
   );
   const showNoDataState = !error && campusEventCount === 0;
 
-  const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage);
-    const currentSettings = loadSettings();
-    saveSettings({ ...currentSettings, language: newLanguage });
-  };
-
   const handleStudyRoomsChange = async (enabled: boolean) => {
     setShowOnlyStudyRooms(enabled);
     const currentSettings = loadSettings();
@@ -391,7 +379,7 @@ export default function BSpace() {
 
   if (isInitialLoading) {
     return (
-      <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+      <PageLayout language={language} onLanguageChange={setLanguage}>
         <div className="container mx-auto p-6 max-w-7xl">
           <PageHeaderSkeleton />
           <SearchFiltersSkeleton />
@@ -402,7 +390,7 @@ export default function BSpace() {
   }
 
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto p-6 max-w-7xl">
         {/* Page Header */}
         <PageHeader language={language} selectedDate={selectedDateObj} t={t} />
