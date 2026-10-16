@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import type { ScheduleData } from "@/lib/schedule-fetcher";
@@ -26,7 +26,7 @@ import {
   getBuildingOpeningTime,
   getBuildingClosingTime,
 } from "@/lib/building-hours";
-import { getBuildingDisplayName } from "@/lib/constants";
+import { getBuildingDisplayName, getVisibleBuildings } from "@/lib/constants";
 import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
 
 interface TimeSlot {
@@ -47,6 +47,9 @@ const getTodayDateValue = () => romeDateKey();
 const MAX_DATE_VALUE = romeDateKey(
   new Date(Date.now() + MAX_RANGE_DAYS * 86_400_000)
 );
+
+const fetcher = ScheduleFetcher.getInstance();
+const VISIBLE_BUILDINGS = getVisibleBuildings();
 
 const parseDateValue = (dateValue: string): Date => {
   const [year, month, day] = dateValue.split("-").map(Number);
@@ -80,8 +83,8 @@ export default function BSpace() {
   // Status badges are present-tense; re-render once a minute so "now" stays true.
   const [nowTick, setNowTick] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
+  const [slotsVersion, setSlotsVersion] = useState(0);
 
-  const fetcher = ScheduleFetcher.getInstance();
   const hasLoadedOnceRef = useRef(false);
   const t = useTranslation(language);
   const todayDateValue = getTodayDateValue();
@@ -111,7 +114,7 @@ export default function BSpace() {
   );
   const allBuildingsClosed = useMemo(
     () => {
-      const keys = Object.keys(fetcher.getVisibleBuildings());
+      const keys = Object.keys(VISIBLE_BUILDINGS);
       return keys.length > 0 && keys.every((key) => !isBuildingOpen(key, selectedDateObj));
     },
     [selectedDateObj]
@@ -181,17 +184,40 @@ export default function BSpace() {
     return () => {
       cancelled = true;
     };
-  }, [fetcher, selectedDateObj, reloadKey]);
+  }, [selectedDateObj, reloadKey]);
+
+  // Free and study slots per room, computed once per selected date (and per
+  // schedule fetch / study-room refresh) and shared by the availability
+  // filters and the cards, instead of recomputing per keystroke per consumer.
+  const roomSlots = useMemo(() => {
+    void slotsVersion;
+    const slots = new Map<
+      string,
+      { freeSlots: TimeSlot[]; studySlots: TimeSlot[] }
+    >();
+    for (const [building, rooms] of Object.entries(scheduleData)) {
+      for (const room of Object.keys(rooms)) {
+        slots.set(`${building}/${room}`, {
+          freeSlots: fetcher.getFreeTimeSlots(building, room, selectedDateObj),
+          studySlots: fetcher.getStudyRoomTimeSlots(
+            building,
+            room,
+            selectedDateObj
+          ),
+        });
+      }
+    }
+    return slots;
+  }, [scheduleData, selectedDateObj, slotsVersion]);
 
   /**
    * Get time slots for a room - if showOnlyStudyRooms is enabled,
    * returns only the official study room time slots
    */
   const getDisplayTimeSlots = (building: string, room: string): TimeSlot[] => {
-    if (showOnlyStudyRooms) {
-      return fetcher.getStudyRoomTimeSlots(building, room, selectedDateObj);
-    }
-    return fetcher.getFreeTimeSlots(building, room, selectedDateObj);
+    const slots = roomSlots.get(`${building}/${room}`);
+    if (!slots) return [];
+    return showOnlyStudyRooms ? slots.studySlots : slots.freeSlots;
   };
 
   // A room free for the whole opening window is far more likely an unbooked,
@@ -202,9 +228,13 @@ export default function BSpace() {
     if (fetcher.isStudyRoom(building, room)) return false;
     const opening = getBuildingOpeningTime(building, selectedDateObj);
     const closing = getBuildingClosingTime(building, selectedDateObj);
-    return fetcher
-      .getFreeTimeSlots(building, room, selectedDateObj)
-      .some((slot) => slot.start <= opening && slot.end >= closing);
+    return (
+      roomSlots
+        .get(`${building}/${room}`)
+        ?.freeSlots.some(
+          (slot) => slot.start <= opening && slot.end >= closing
+        ) ?? false
+    );
   };
 
   const isRoomCurrentlyFree = (building: string, room: string) => {
@@ -248,14 +278,17 @@ export default function BSpace() {
     });
   };
 
-  const visibleBuildings = fetcher.getVisibleBuildings();
-  const allRooms = Object.entries(scheduleData).flatMap(([building, rooms]) =>
-    Object.keys(rooms).map((room) => ({ building, room }))
+  const allRooms = useMemo(
+    () =>
+      Object.entries(scheduleData).flatMap(([building, rooms]) =>
+        Object.keys(rooms).map((room) => ({ building, room }))
+      ),
+    [scheduleData]
   );
 
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 
-  const toggleFavorite = (building: string, room: string) => {
+  const handleToggleFavorite = useCallback((building: string, room: string) => {
     const key = `${building}/${room}`;
     setFavorites((current) => {
       const next = current.includes(key)
@@ -268,7 +301,7 @@ export default function BSpace() {
       }
       return next;
     });
-  };
+  }, []);
 
   const filteredRooms = useMemo(() => {
     const filtered = allRooms.filter(({ building, room }) => {
@@ -295,8 +328,7 @@ export default function BSpace() {
       // Filter by time slots - only show rooms that have study room time slots when enabled
       const studyRoomMatch =
         !showOnlyStudyRooms ||
-        fetcher.getStudyRoomTimeSlots(building, room, selectedDateObj).length >
-          0;
+        (roomSlots.get(`${building}/${room}`)?.studySlots.length ?? 0) > 0;
 
       return (
         buildingMatch &&
@@ -319,6 +351,7 @@ export default function BSpace() {
     ];
   }, [
     allRooms,
+    roomSlots,
     selectedBuilding,
     searchQuery,
     availabilityActive,
@@ -361,6 +394,7 @@ export default function BSpace() {
     // Fetch study room data if enabling the filter
     if (enabled) {
       await fetcher.fetchStudyRooms();
+      setSlotsVersion((version) => version + 1);
     }
   };
 
@@ -431,7 +465,7 @@ export default function BSpace() {
           favoriteCount={favorites.length}
           showOnly2h={showOnly2h}
           on2hChange={setShowOnly2h}
-          visibleBuildings={visibleBuildings}
+          visibleBuildings={VISIBLE_BUILDINGS}
           filteredCount={displayedFilteredCount}
           minDate={todayDateValue}
           maxDate={MAX_DATE_VALUE}
@@ -513,7 +547,7 @@ export default function BSpace() {
                 occupiedStatusLabel={occupiedLabel}
                 buildingClosedMessage={buildingClosedMessage}
                 isFavorite={favoriteSet.has(`${building}/${room}`)}
-                onToggleFavorite={() => toggleFavorite(building, room)}
+                onToggleFavorite={handleToggleFavorite}
                 showStatus={!isPastDate}
                 t={t}
               />
