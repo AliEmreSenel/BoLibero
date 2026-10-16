@@ -10,7 +10,7 @@ const events = parseBocconiSchedule(html);
 
 describe("parseBocconiSchedule", () => {
   it("keeps only rows with a full schedule shape", () => {
-    expect(events).toHaveLength(3);
+    expect(events).toHaveLength(4);
   });
 
   it("converts Italian dates to ISO and pads them", () => {
@@ -38,6 +38,26 @@ describe("parseBocconiSchedule", () => {
 
   it("splits teachers on the dash separator", () => {
     expect(events[0].teachers).toEqual(["SAVOCHKIN A.", "MILANI S."]);
+  });
+
+  it("keeps hyphenated professor names as one teacher", () => {
+    expect(events[2].teachers).toEqual(["GARCIA-LOPEZ J."]);
+  });
+
+  it("normalizes unpadded scraped times", () => {
+    expect(events[2].start).toBe("08:30");
+    expect(events[2].end).toBe("09:45");
+  });
+
+  it("extracts sections written as 'Cl. 43' with a space", () => {
+    expect(events[2].code).toBe("30062");
+    expect(events[2].className).toBe("Cl. 43");
+  });
+
+  it("decodes Italian named entities and keeps out-of-range numeric entities raw", () => {
+    expect(events[2].description).toBe(
+      "STATISTICA è APPLICATA €\nSEDE MILANO è &#x7FFFFFFF; § 1°"
+    );
   });
 
   it("sorts by date then start time", () => {
