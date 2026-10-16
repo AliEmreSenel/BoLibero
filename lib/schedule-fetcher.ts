@@ -3,6 +3,7 @@ import {
   getBuildingClosingTime,
   isBuildingOpen,
 } from "./building-hours";
+import { fetchBocconiEvents } from "./bocconi-calendar";
 import {
   BUILDINGS,
   isFreeTimeEvent,
@@ -303,3 +304,52 @@ class ScheduleFetcher {
 
 export { ScheduleFetcher };
 export type { ScheduleData };
+
+// Server-side professor index scraper. An unfiltered multi-month response
+// exceeds Next's 2 MB data-cache item limit, so the ~3-month window is sharded
+// into weekly windows aligned to fixed UTC Mondays: every regeneration reuses
+// the same cache keys. Same shard pattern as app/api/classes/route.ts.
+const PROFESSOR_WINDOW_DAYS = 91;
+const DAY_MS = 86_400_000;
+const WEEK_MS = 7 * DAY_MS;
+const WEEK_ANCHOR_MS = Date.UTC(2024, 0, 1);
+
+export async function fetchProfessorNames(): Promise<string[]> {
+  const start =
+    WEEK_ANCHOR_MS + Math.floor((Date.now() - WEEK_ANCHOR_MS) / WEEK_MS) * WEEK_MS;
+  const end = start + PROFESSOR_WINDOW_DAYS * DAY_MS;
+
+  const ranges: Array<{ startDate: Date; endDate: Date }> = [];
+  for (let cursor = start; cursor < end; cursor += WEEK_MS) {
+    ranges.push({
+      startDate: new Date(cursor),
+      endDate: new Date(Math.min(cursor + 6 * DAY_MS, end)),
+    });
+  }
+
+  const settled = await Promise.allSettled(
+    ranges.map((range) => fetchBocconiEvents(range))
+  );
+  const failures = settled.filter((result) => result.status === "rejected").length;
+  // Total failure must throw so ISR keeps serving the last-good page instead
+  // of caching an empty index; partial success proceeds with survivors.
+  if (failures === settled.length) {
+    throw new Error(`${failures}/${settled.length} professor shards failed`);
+  }
+  if (failures > 0) {
+    Sentry.captureMessage(
+      `Professor index: ${failures}/${settled.length} shards failed`,
+      "warning"
+    );
+  }
+
+  const names = new Set<string>();
+  for (const result of settled) {
+    if (result.status === "fulfilled") {
+      for (const event of result.value) {
+        for (const teacher of event.teachers) names.add(teacher);
+      }
+    }
+  }
+  return Array.from(names).sort((a, b) => a.localeCompare(b, "it"));
+}
