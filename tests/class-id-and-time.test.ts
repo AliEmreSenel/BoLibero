@@ -31,6 +31,9 @@ describe("time utils", () => {
   it("normalizes scraped times", () => {
     expect(normalizeTime("8:30")).toBe("08:30");
     expect(normalizeTime("24:00")).toBe("24:00");
+    expect(normalizeTime("23:59")).toBe("23:59");
+    expect(normalizeTime("24:01")).toBeNull();
+    expect(normalizeTime("24:05")).toBeNull();
     expect(normalizeTime("8.30")).toBeNull();
     expect(normalizeTime("25:00")).toBeNull();
     expect(normalizeTime("10:60")).toBeNull();

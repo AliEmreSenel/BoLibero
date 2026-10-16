@@ -37,12 +37,11 @@ describe("computeFreeSlots", () => {
     expect(slots).toEqual([{ start: "09:00", end: "20:00" }]);
   });
 
-  it("skips malformed and inverted times", () => {
+  it("skips malformed and zero-length times", () => {
     const slots = computeFreeSlots(
       [
         { start: "8.30", end: "09:00" },
         { start: "10:00", end: "10:00" },
-        { start: "12:00", end: "11:00" },
       ],
       DAY.start,
       DAY.end
@@ -50,7 +49,7 @@ describe("computeFreeSlots", () => {
     expect(slots).toEqual([{ start: "08:00", end: "20:00" }]);
   });
 
-  it("drops gaps of 15 minutes or less", () => {
+  it("drops gaps shorter than the minimum", () => {
     const slots = computeFreeSlots(
       [
         { start: "08:00", end: "10:00" },
@@ -60,5 +59,47 @@ describe("computeFreeSlots", () => {
       DAY.end
     );
     expect(slots).toEqual([{ start: "12:00", end: "20:00" }]);
+  });
+
+  it("reports a gap of exactly the minimum length", () => {
+    const slots = computeFreeSlots(
+      [
+        { start: "08:00", end: "10:00" },
+        { start: "10:15", end: "12:00" },
+      ],
+      DAY.start,
+      DAY.end
+    );
+    expect(slots).toEqual([
+      { start: "10:00", end: "10:15" },
+      { start: "12:00", end: "20:00" },
+    ]);
+  });
+
+  it("keeps the last minute when the day ends at 24:00", () => {
+    expect(
+      computeFreeSlots([{ start: "08:00", end: "24:00" }], "08:00", "24:00", 0)
+    ).toEqual([]);
+    expect(
+      computeFreeSlots([{ start: "08:00", end: "23:59" }], "08:00", "24:00", 0)
+    ).toEqual([{ start: "23:59", end: "24:00" }]);
+  });
+
+  it("splits events crossing midnight", () => {
+    const slots = computeFreeSlots(
+      [{ start: "22:00", end: "01:00" }],
+      "00:00",
+      "24:00"
+    );
+    expect(slots).toEqual([{ start: "01:00", end: "22:00" }]);
+  });
+
+  it("clamps events crossing midnight to the opening window", () => {
+    const slots = computeFreeSlots(
+      [{ start: "22:00", end: "01:00" }],
+      DAY.start,
+      DAY.end
+    );
+    expect(slots).toEqual([{ start: "08:00", end: "20:00" }]);
   });
 });
