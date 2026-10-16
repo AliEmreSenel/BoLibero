@@ -23,12 +23,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { type Language, useTranslation } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import {
   SAVED_CLASSES_KEY,
-  getInitialLanguage,
-  loadSettings,
-  saveSettings,
+  safeGetItem,
+  safeRemoveItem,
+  safeSetItem,
+  useLanguage,
 } from "@/lib/settings";
 
 interface ClassOption {
@@ -39,7 +40,7 @@ interface ClassOption {
 }
 
 export default function CalendarBuilder() {
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selected, setSelected] = useState<ClassOption[]>([]);
   const [query, setQuery] = useState("");
@@ -54,16 +55,13 @@ export default function CalendarBuilder() {
   const t = useTranslation(language);
 
   useEffect(() => {
-    setLanguage(loadSettings().language);
     setOrigin(window.location.origin);
 
     try {
-      const saved = JSON.parse(
-        window.localStorage.getItem(SAVED_CLASSES_KEY) || "[]"
-      );
+      const saved = JSON.parse(safeGetItem(SAVED_CLASSES_KEY) || "[]");
       if (Array.isArray(saved)) setSelected(saved.slice(0, MAX_CLASSES));
     } catch {
-      window.localStorage.removeItem(SAVED_CLASSES_KEY);
+      safeRemoveItem(SAVED_CLASSES_KEY);
     }
   }, []);
 
@@ -105,9 +103,7 @@ export default function CalendarBuilder() {
   }, [reloadKey, searchParams, t.classCatalogError]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(SAVED_CLASSES_KEY, JSON.stringify(selected));
-    }
+    safeSetItem(SAVED_CLASSES_KEY, JSON.stringify(selected));
   }, [selected]);
 
   const selectedIds = useMemo(
@@ -164,13 +160,8 @@ export default function CalendarBuilder() {
     window.setTimeout(() => setCopiedList(false), 2500);
   };
 
-  const handleLanguageChange = (nextLanguage: Language) => {
-    setLanguage(nextLanguage);
-    saveSettings({ ...loadSettings(), language: nextLanguage });
-  };
-
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto max-w-7xl p-6">
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-3">

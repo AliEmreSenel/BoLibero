@@ -12,8 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EXAMS_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
-import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
+import { EXAMS_KEY, safeGetItem, safeSetItem, useLanguage } from "@/lib/settings";
+import { formatDateFull, useTranslation } from "@/lib/i18n";
 
 interface ExamItem {
   id: string;
@@ -97,7 +97,7 @@ const buildIcs = (items: ExamItem[]) => {
 };
 
 export default function ExamsTracker() {
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
   const [items, setItems] = useState<ExamItem[]>([]);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -108,17 +108,12 @@ export default function ExamsTracker() {
 
   const persist = (next: ExamItem[]) => {
     setItems(next);
-    try {
-      window.localStorage.setItem(EXAMS_KEY, JSON.stringify(next));
-    } catch {
-      // Storage unavailable: entries live for this session only.
-    }
+    safeSetItem(EXAMS_KEY, JSON.stringify(next));
   };
 
   useEffect(() => {
-    setLanguage(loadSettings().language);
     try {
-      const saved = JSON.parse(window.localStorage.getItem(EXAMS_KEY) || "[]");
+      const saved = JSON.parse(safeGetItem(EXAMS_KEY) || "[]");
       if (Array.isArray(saved)) setItems(saved);
     } catch {
       // Corrupt list: start clean.
@@ -154,17 +149,12 @@ export default function ExamsTracker() {
     URL.revokeObjectURL(url);
   };
 
-  const handleLanguageChange = (nextLanguage: Language) => {
-    setLanguage(nextLanguage);
-    saveSettings({ ...loadSettings(), language: nextLanguage });
-  };
-
   const sorted = [...items].sort((a, b) =>
     `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)
   );
 
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto max-w-3xl p-6">
         <div className="mb-8">
           <div className="mb-2 flex items-center gap-3">

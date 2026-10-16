@@ -6,15 +6,15 @@ import { Search } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
-import { type Language, useTranslation } from "@/lib/i18n";
+import { useLanguage } from "@/lib/settings";
+import { useTranslation } from "@/lib/i18n";
 
 interface ProfessorsIndexProps {
   professors: string[];
 }
 
 export function ProfessorsIndex({ professors }: ProfessorsIndexProps) {
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
   const [query, setQuery] = useState("");
   const t = useTranslation(language);
 
@@ -24,13 +24,8 @@ export function ProfessorsIndex({ professors }: ProfessorsIndexProps) {
     return professors.filter((name) => name.toLowerCase().includes(term));
   }, [professors, query]);
 
-  const handleLanguageChange = (nextLanguage: Language) => {
-    setLanguage(nextLanguage);
-    saveSettings({ ...loadSettings(), language: nextLanguage });
-  };
-
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto max-w-5xl p-6">
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">{t.professorsTitle}</h1>

@@ -9,8 +9,8 @@ import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
 import { DetailHeader } from "@/components/detail-header";
 import { CalendarView } from "@/components/calendar-view";
-import { type Language, useTranslation } from "@/lib/i18n";
-import { getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
+import { useTranslation } from "@/lib/i18n";
+import { useLanguage } from "@/lib/settings";
 
 export default function RoomCalendar() {
   const params = useParams();
@@ -32,14 +32,9 @@ export default function RoomCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [language, setLanguage] = useState<Language>(getInitialLanguage);
+  const [language, setLanguage] = useLanguage();
 
   const t = useTranslation(language);
-
-  useEffect(() => {
-    const loadedSettings = loadSettings();
-    setLanguage(loadedSettings.language);
-  }, []);
 
   const loadMonthSchedule = async (month: Date) => {
     setLoading(true);
@@ -80,14 +75,8 @@ export default function RoomCalendar() {
     loadMonthSchedule(currentMonth);
   };
 
-  const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage);
-    const currentSettings = loadSettings();
-    saveSettings({ ...currentSettings, language: newLanguage });
-  };
-
   return (
-    <PageLayout language={language} onLanguageChange={handleLanguageChange}>
+    <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="container mx-auto p-6 max-w-7xl">
         <DetailHeader
           title={room}
