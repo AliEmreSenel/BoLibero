@@ -6,7 +6,7 @@ import {
 import {
   BUILDINGS,
   isFreeTimeEvent,
-  isValidRoom,
+  resolveRoom,
   getBuildingDisplayName,
   getVisibleBuildings,
   isStudyRoomEvent,
@@ -31,6 +31,7 @@ interface ScheduleData {
 // building/room grid and derives free/study slots for the home grid.
 const CACHE_DURATION = 5 * 60 * 1000;
 const MAX_CACHED_DAYS = 14;
+const FETCH_TIMEOUT_MS = 15_000;
 
 class ScheduleFetcher {
   private static instance: ScheduleFetcher;
@@ -38,6 +39,13 @@ class ScheduleFetcher {
   // Instance state, bounded: on a long-lived tab the day cache and study-slot
   // maps used to grow for the life of the page.
   private dayCache = new Map<string, { events: ScheduleEvent[]; timestamp: number }>();
+
+  // Per-date organized grids, so slot queries read the day they ask for
+  // instead of the last fetched day. Bounded by the same eviction as dayCache.
+  private scheduleDataByDate = new Map<string, ScheduleData>();
+
+  // One in-flight upstream fetch per date: concurrent same-day callers share it.
+  private inflight = new Map<string, Promise<ScheduleEvent[]>>();
 
   private constructor() {}
 
@@ -61,16 +69,48 @@ class ScheduleFetcher {
       return cached.events;
     }
 
-    const response = await fetch(`/api/events?day=${dateKey}`);
-    if (!response.ok) {
-      throw new Error(
-        "Impossibile accedere ai dati di Bocconi. Riprova più tardi."
-      );
+    const pending = this.inflight.get(dateKey);
+    if (pending) {
+      return pending;
     }
-    const data = (await response.json()) as { events: ScheduleEvent[] };
+
+    const promise = this.loadDay(dateKey, cached).finally(() => {
+      this.inflight.delete(dateKey);
+    });
+    this.inflight.set(dateKey, promise);
+    return promise;
+  }
+
+  private async loadDay(
+    dateKey: string,
+    stale: { events: ScheduleEvent[]; timestamp: number } | undefined
+  ): Promise<ScheduleEvent[]> {
+    let data: { events: ScheduleEvent[] };
+    try {
+      const response = await fetch(`/api/events?day=${dateKey}`, {
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        throw new Error(
+          "Impossibile accedere ai dati di Bocconi. Riprova più tardi."
+        );
+      }
+      data = (await response.json()) as { events: ScheduleEvent[] };
+    } catch (error) {
+      // Serve the expired entry so a flaky upstream never blanks the grid.
+      if (stale) {
+        return stale.events;
+      }
+      throw error;
+    }
+
     if (this.dayCache.size >= MAX_CACHED_DAYS) {
       const oldest = this.dayCache.keys().next().value;
-      if (oldest !== undefined) this.dayCache.delete(oldest);
+      if (oldest !== undefined) {
+        this.dayCache.delete(oldest);
+        this.scheduleDataByDate.delete(oldest);
+        this.clearStudyRoomSlotsForDate(oldest);
+      }
     }
     this.dayCache.set(dateKey, { events: data.events, timestamp: Date.now() });
     return data.events;
@@ -89,7 +129,8 @@ class ScheduleFetcher {
       });
     });
 
-    // Add events only to valid rooms using exact matching
+    // Add events only to canonical rooms, resolving the building from our
+    // own room list (the scraped placement string is free text).
     // BUT exclude events that indicate free time
     for (const item of scheduleItems) {
       // Skip events that indicate the room is available for general use
@@ -98,21 +139,17 @@ class ScheduleFetcher {
       }
 
       let placed = false;
-      for (const { roomName, building } of item.rooms) {
-        // Only add if room is in our valid list and building exists
-        if (
-          isValidRoom(roomName) &&
-          organized[building] &&
-          organized[building][roomName]
-        ) {
-          organized[building][roomName].push(item);
+      for (const { roomName } of item.rooms) {
+        const canonical = resolveRoom(roomName);
+        if (canonical) {
+          organized[canonical.building][canonical.room].push(item);
           placed = true;
         }
       }
 
-      // A listed room that is not in our tracking config means Bocconi added
-      // a room the app silently ignores. Surface it once per room so the
-      // constants list can be updated.
+      // A room not in our tracking config means Bocconi added a room the app
+      // silently ignores. Surface it once per room so the constants list can
+      // be updated.
       if (item.rooms.length > 0 && !placed) {
         for (const { roomName } of item.rooms) {
           if (!reportedUnknownRooms.has(roomName)) {
@@ -141,7 +178,7 @@ class ScheduleFetcher {
     this.updateStudyRooms(scheduleItems);
 
     const organized = this.organizeSchedule(scheduleItems);
-    this.currentScheduleData = organized;
+    this.scheduleDataByDate.set(dateKey, organized);
 
     // Rebuild the study-room set from retained slots so it reflects the
     // cached window instead of accumulating forever across date changes.
@@ -165,13 +202,16 @@ class ScheduleFetcher {
   private updateStudyRooms(scheduleItems: ScheduleEvent[]): void {
     for (const item of scheduleItems) {
       if (isStudyRoomEvent(item)) {
-        for (const { roomName, building } of item.rooms) {
-          if (isValidRoom(roomName)) {
+        for (const { roomName } of item.rooms) {
+          const canonical = resolveRoom(roomName);
+          if (canonical) {
+            const canonicalKey = `${canonical.building}:${canonical.room}`;
+
             // Track that this room is a study room
-            this.studyRooms.add(`${building}:${roomName}`);
+            this.studyRooms.add(canonicalKey);
 
             // Track the specific time slot
-            const key = `${building}:${roomName}:${item.date}`;
+            const key = `${canonicalKey}:${item.date}`;
             const existingSlots = this.studyRoomSlots.get(key) || [];
 
             const hasSlot = existingSlots.some(
@@ -195,15 +235,16 @@ class ScheduleFetcher {
     room: string,
     date: Date = new Date()
   ): Array<{ start: string; end: string }> {
-    const events = this.getCurrentScheduleData()[building]?.[room] || [];
+    const dateKey = this.formatDateKey(date);
+    const events =
+      this.scheduleDataByDate.get(dateKey)?.[building]?.[room] || [];
 
     // Check if building is open on this date
     if (!isBuildingOpen(building, date)) {
       return []; // Building is closed, no free slots
     }
 
-    const dateStr = this.formatDateKey(date);
-    const dayEvents = events.filter((event) => event.date === dateStr);
+    const dayEvents = events.filter((event) => event.date === dateKey);
 
     return computeFreeSlots(
       dayEvents,
@@ -212,13 +253,8 @@ class ScheduleFetcher {
     );
   }
 
-  // Store current schedule data for access by other methods
-  private currentScheduleData: ScheduleData = {};
+  // Study-room bookkeeping state
   private studyRooms: Set<string> = new Set();
-
-  private getCurrentScheduleData(): ScheduleData {
-    return this.currentScheduleData;
-  }
 
   /**
    * Check if a room is an officially designated study room
@@ -296,6 +332,7 @@ class ScheduleFetcher {
   // Clear cache (useful for manual refresh)
   clearCache() {
     this.dayCache.clear();
+    this.scheduleDataByDate.clear();
     this.studyRooms.clear();
     this.studyRoomSlots.clear();
   }
