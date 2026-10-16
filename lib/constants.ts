@@ -290,6 +290,25 @@ export function getAllValidRooms(): Set<string> {
 }
 
 /**
+ * Canonical room lookup: the scraped placement puts free-text parts after the
+ * building ("Aula 1, Sarfatti 25, Piano 1"), so the scraped building string
+ * is untrustable; the room name is the reliable key. Rooms are enumerated in
+ * BUILDINGS, so a room missing here is truly untracked.
+ */
+let canonicalRooms: Map<string, { building: string; room: string }> | null =
+  null;
+export function resolveRoom(
+  roomName: string
+): { building: string; room: string } | null {
+  canonicalRooms ??= new Map(
+    Object.entries(BUILDINGS).flatMap(([building, { rooms }]) =>
+      rooms.map((room) => [normalizeEntity(room), { building, room }] as const)
+    )
+  );
+  return canonicalRooms.get(normalizeEntity(roomName)) ?? null;
+}
+
+/**
  * Check if a room name is in the valid rooms list, using the shared
  * whole-entity normalization so " Aula 1 " matches "Aula 1".
  */
