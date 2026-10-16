@@ -47,8 +47,11 @@ describe("GET /api/events", () => {
     expect(upstreamQueryOf(fetchMock.mock.calls[0])).toBe("30062");
 
     const body = await response.json();
-    expect(body.events).toHaveLength(1);
-    expect(body.events[0].class).toBe("Cl.43");
+    expect(body.events).toHaveLength(2);
+    expect(body.events.map((e: { class: string }) => e.class)).toEqual([
+      "Cl.43",
+      "Cl.43",
+    ]);
   });
 
   it("keeps room queries room-scoped and caches 200 responses", async () => {
@@ -159,6 +162,6 @@ describe("GET /api/calendar.ics", () => {
     expect(response.headers.get("Cache-Control")).toContain("s-maxage=21600");
     const body = await response.text();
     expect(body).toContain("BEGIN:VCALENDAR");
-    expect(body.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+    expect(body.match(/BEGIN:VEVENT/g)).toHaveLength(3);
   });
 });
