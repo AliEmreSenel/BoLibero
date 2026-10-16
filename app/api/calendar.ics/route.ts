@@ -12,6 +12,7 @@ import {
 } from "@/lib/bocconi-calendar";
 import { MAX_CLASSES } from "@/lib/constants";
 import { normalizeTime } from "@/lib/time";
+import { upstreamTextFailure } from "@/app/api/upstream-failure";
 
 export const revalidate = 21600;
 const UPSTREAM_CONCURRENCY = 4;
@@ -194,8 +195,9 @@ export async function GET(request: NextRequest) {
   );
 
   try {
-    // A failing class code must not 502 the whole subscription: serve the
-    // classes that loaded, warn on partials, fail only when all fetches fail.
+    // A feed built from surviving classes makes vanished UIDs for the failed
+    // ones, so subscriber clients permanently delete those events. Any fetch
+    // failure fails the whole request (no CDN write).
     type Group = { evs: BocconiEvent[] | null };
     const groups = await mapWithConcurrency<string, Group>(
       uniqueCodes,
@@ -206,11 +208,9 @@ export async function GET(request: NextRequest) {
           .catch(() => ({ evs: null }))
     );
     const failures = groups.filter((group) => group.evs === null).length;
-    if (failures === groups.length) {
-      throw new Error("All class event fetches failed");
-    }
     if (failures > 0) {
       Sentry.captureMessage(`Subscription feed: ${failures}/${groups.length} class fetches failed`, "warning");
+      throw new Error(`${failures}/${groups.length} class event fetches failed`);
     }
     const eventGroups = groups
       .filter((group): group is { evs: BocconiEvent[] } => group.evs !== null)
@@ -249,8 +249,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Failed to generate subscription calendar:", error);
-    return new NextResponse("Unable to generate the calendar right now.", {
-      status: 502,
-    });
+    return upstreamTextFailure("Unable to generate the calendar right now.");
   }
 }
