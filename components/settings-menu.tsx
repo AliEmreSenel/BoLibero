@@ -32,7 +32,7 @@ export function SettingsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+        <Button variant="ghost" size="sm" className="h-9 w-9 min-h-11 p-0">
           <Settings className="h-4 w-4" />
           <span className="sr-only">{t.settings}</span>
         </Button>

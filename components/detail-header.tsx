@@ -37,12 +37,12 @@ export function DetailHeader({
     <>
       {/* Back Button */}
       <div className="mb-6 flex items-center justify-between">
-        <Link href="/">
-          <Button variant="outline">
+        <Button asChild variant="outline">
+          <Link href="/">
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t.backToOverview}
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <Button
           onClick={onRefresh}
           variant="outline"

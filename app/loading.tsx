@@ -6,9 +6,9 @@ import {
 
 export default function Loading() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       <div className="h-16 border-b bg-background" /> {/* Navbar placeholder */}
-      <main className="flex-1">
+      <main id="main" className="flex-1">
         <div className="container mx-auto p-6 max-w-7xl">
           <PageHeaderSkeleton />
           <SearchFiltersSkeleton />

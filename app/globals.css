@@ -9,7 +9,7 @@
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 221 83% 45%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -17,7 +17,7 @@
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96%;
     --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 74% 42%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
@@ -45,7 +45,7 @@
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 62%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
@@ -65,154 +65,17 @@
   body {
     @apply bg-background text-foreground;
   }
-}
 
-/* Calendar specific theming */
-.rdp {
-  --rdp-cell-size: 40px;
-  margin: 0;
-  color: hsl(var(--foreground));
-}
-
-.rdp-months {
-  display: flex;
-}
-
-.rdp-month {
-  margin: 0;
-}
-
-.rdp-table {
-  width: 100%;
-  max-width: none;
-  border-collapse: collapse;
-}
-
-.rdp-caption {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 0 1rem 0;
-  text-align: left;
-}
-
-.rdp-caption_label {
-  font-size: 1rem;
-  font-weight: 500;
-  color: hsl(var(--foreground));
-}
-
-.rdp-nav {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.rdp-nav_button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.375rem;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.rdp-nav_button:hover {
-  background-color: hsl(var(--muted));
-}
-
-.rdp-nav_button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.rdp-head_row,
-.rdp-row {
-  display: flex;
-}
-
-.rdp-head_cell {
-  width: var(--rdp-cell-size);
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-align: center;
-  color: hsl(var(--muted-foreground));
-  padding: 0 0 0.5rem 0;
-}
-
-.rdp-cell {
-  width: var(--rdp-cell-size);
-  height: var(--rdp-cell-size);
-  text-align: center;
-  position: relative;
-  padding: 0;
-}
-
-.rdp-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--rdp-cell-size);
-  height: var(--rdp-cell-size);
-  padding: 0;
-  border: none;
-  border-radius: 0.375rem;
-  background-color: transparent;
-  color: hsl(var(--foreground));
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.rdp-button:hover {
-  background-color: hsl(var(--muted));
-}
-
-.rdp-day_today {
-  font-weight: 600;
-  color: hsl(var(--primary));
-}
-
-.rdp-day_selected {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-  font-weight: 500;
-}
-
-.rdp-day_selected:hover {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-}
-
-.rdp-day_outside {
-  color: hsl(var(--muted-foreground));
-  opacity: 0.5;
-}
-
-.rdp-day_disabled {
-  color: hsl(var(--muted-foreground));
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Custom modifier for events */
-.rdp-day_hasEvents {
-  background-color: hsl(var(--accent)) !important;
-  color: hsl(var(--accent-foreground)) !important;
-  font-weight: 600;
-}
-
-.rdp-day_hasEvents:hover {
-  background-color: hsl(var(--accent)) !important;
-  color: hsl(var(--accent-foreground)) !important;
-  opacity: 0.9;
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
 }
 
 /* Ensure proper borders and shadows */

@@ -134,17 +134,18 @@ export function RoomCard({
         </div>
 
         {/* More Info Link */}
-        <Link
-          href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}
+        <Button
+          asChild
+          variant="ghost"
+          className="w-full justify-between p-0 h-auto py-2"
         >
-          <Button
-            variant="ghost"
-            className="w-full justify-between p-0 h-auto py-2"
+          <Link
+            href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}
           >
             <span>{t.moreInfo}</span>
             <ArrowRight className="h-4 w-4" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </CardContent>
     </Card>
   );

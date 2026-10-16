@@ -183,10 +183,14 @@ export default function ExamsTracker() {
           <CardContent>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label
+                  htmlFor="exam-title"
+                  className="text-xs font-medium text-muted-foreground"
+                >
                   {t.examTitleLabel}
                 </label>
                 <Input
+                  id="exam-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder={t.examTitlePlaceholder}
@@ -194,10 +198,14 @@ export default function ExamsTracker() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label
+                  htmlFor="exam-date"
+                  className="text-xs font-medium text-muted-foreground"
+                >
                   {t.examDateLabel}
                 </label>
                 <Input
+                  id="exam-date"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
@@ -205,10 +213,14 @@ export default function ExamsTracker() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label
+                  htmlFor="exam-time"
+                  className="text-xs font-medium text-muted-foreground"
+                >
                   {t.examTimeLabel}
                 </label>
                 <Input
+                  id="exam-time"
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
@@ -216,10 +228,14 @@ export default function ExamsTracker() {
                 />
               </div>
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-xs font-medium text-muted-foreground">
+                <label
+                  htmlFor="exam-notes"
+                  className="text-xs font-medium text-muted-foreground"
+                >
                   {t.examNotesLabel}
                 </label>
                 <Input
+                  id="exam-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="h-11"

@@ -216,14 +216,14 @@ export default function ScheduleView() {
             </Button>
           </div>
         ) : loading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+          <div role="status" className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
             {t.loading}
           </div>
         ) : (
           <div className="space-y-8">
             {error && (
-              <p className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {t.loadEventsError}
               </p>
             )}
@@ -242,7 +242,7 @@ export default function ScheduleView() {
               </div>
             )}
             {days.length === 0 && (
-              <p className="py-8 text-center text-muted-foreground">
+              <p role="status" className="py-8 text-center text-muted-foreground">
                 {t.noEventsNextDays}
               </p>
             )}

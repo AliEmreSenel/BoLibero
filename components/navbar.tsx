@@ -30,26 +30,26 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
               <Link
                 href="/calendar"
                 aria-current={pathname === "/calendar" ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   pathname === "/calendar"
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground"
                 }`}
               >
                 <CalendarPlus className="h-4 w-4" />
-                <span>{t.classCalendarNav}</span>
+                <span className="hidden sm:inline">{t.classCalendarNav}</span>
               </Link>
               <Link
                 href="/schedule"
                 aria-current={pathname === "/schedule" ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   pathname === "/schedule"
                     ? "bg-accent text-accent-foreground"
                     : "text-muted-foreground"
                 }`}
               >
                 <CalendarDays className="h-4 w-4" />
-                <span>{t.mySchedule}</span>
+                <span className="hidden sm:inline">{t.mySchedule}</span>
               </Link>
             </nav>
             <SettingsMenu language={language} onLanguageChange={onLanguageChange} />

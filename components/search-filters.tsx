@@ -91,7 +91,7 @@ export function SearchFilters({
                   type="button"
                   onClick={() => setSearchQuery("")}
                   aria-label={t.reset}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 min-h-11 min-w-11 text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -170,7 +170,8 @@ export function SearchFilters({
           <Button
             variant={selectedBuilding === "all" ? "default" : "outline"}
             onClick={() => setSelectedBuilding("all")}
-            className="rounded-full text-xs sm:text-sm"
+            aria-pressed={selectedBuilding === "all"}
+            className="min-h-11 rounded-full text-xs sm:text-sm"
             size="sm"
           >
             {t.allCampuses}
@@ -187,7 +188,8 @@ export function SearchFilters({
                     selectedBuilding === buildingKey ? "all" : buildingKey
                   )
                 }
-                className="rounded-full text-xs sm:text-sm"
+                aria-pressed={selectedBuilding === buildingKey}
+                className="min-h-11 rounded-full text-xs sm:text-sm"
                 size="sm"
               >
                 {displayName.toUpperCase()}
@@ -205,8 +207,9 @@ export function SearchFilters({
                 onClick={() => setShowOnlyAvailable(!showOnlyAvailable)}
                 disabled={availabilityDisabled}
                 title={availabilityDisabled ? t.futureDatesNotice : undefined}
+                aria-pressed={showOnlyAvailable && !availabilityDisabled}
                 size="sm"
-                className="text-xs sm:text-sm"
+                className="min-h-11 text-xs sm:text-sm"
               >
                 {availabilityFilterLabel}
               </Button>
@@ -214,32 +217,36 @@ export function SearchFilters({
             <Button
               variant={!showOnlyAvailable ? "default" : "ghost"}
               onClick={() => setShowOnlyAvailable(false)}
+              aria-pressed={!showOnlyAvailable}
               size="sm"
-              className="text-xs sm:text-sm"
+              className="min-h-11 text-xs sm:text-sm"
             >
               {t.allRooms}
             </Button>
             <Button
               variant={showOnlyStudyRooms ? "default" : "ghost"}
               onClick={() => onStudyRoomsChange(!showOnlyStudyRooms)}
+              aria-pressed={showOnlyStudyRooms}
               size="sm"
-              className="text-xs sm:text-sm"
+              className="min-h-11 text-xs sm:text-sm"
             >
               {t.showOnlyStudyRooms}
             </Button>
             <Button
               variant={showOnly2h ? "default" : "ghost"}
               onClick={() => on2hChange(!showOnly2h)}
+              aria-pressed={showOnly2h}
               size="sm"
-              className="text-xs sm:text-sm"
+              className="min-h-11 text-xs sm:text-sm"
             >
               {t.free2h}
             </Button>
             <Button
               variant={showOnlyFavorites ? "default" : "ghost"}
               onClick={() => onFavoritesChange(!showOnlyFavorites)}
+              aria-pressed={showOnlyFavorites}
               size="sm"
-              className="text-xs sm:text-sm"
+              className="min-h-11 text-xs sm:text-sm"
               disabled={favoriteCount === 0}
               title={favoriteCount === 0 ? t.addFavorite : undefined}
             >

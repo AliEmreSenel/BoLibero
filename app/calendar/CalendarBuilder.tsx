@@ -200,12 +200,12 @@ export default function CalendarBuilder() {
               </div>
 
               {loading ? (
-                <div className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground">
+                <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   {t.loadingClasses}
                 </div>
               ) : error ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+                <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
                   <span>{error}</span>
                   <Button
                     variant="outline"
@@ -261,7 +261,7 @@ export default function CalendarBuilder() {
                     <p className="text-xs text-muted-foreground">{t.first100Note}</p>
                   )}
                   {visibleClasses.length === 0 && (
-                    <p className="py-12 text-center text-muted-foreground">
+                    <p role="status" className="py-12 text-center text-muted-foreground">
                       {t.noClassesFound}
                     </p>
                   )}
