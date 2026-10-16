@@ -7,7 +7,7 @@ import { PageLayout } from "@/components/page-layout";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
-import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
+import { romeDateKey, romeMinutes, normalizeTime, toMinutes } from "@/lib/time";
 import { SAVED_CLASSES_KEY, SCHEDULE_SNAPSHOT_KEY, getInitialLanguage, loadSettings, saveSettings } from "@/lib/settings";
 import { type Language, formatDateFull, useTranslation } from "@/lib/i18n";
 import { parseISO } from "date-fns";
@@ -118,13 +118,17 @@ export default function ScheduleView() {
           });
         }
       }
-      try {
-        window.localStorage.setItem(
-          SCHEDULE_SNAPSHOT_KEY,
-          JSON.stringify(snapshot)
-        );
-      } catch {
-        // Storage unavailable: skip change detection this visit.
+      // A partial fetch must not overwrite the snapshot: wiped rooms cause
+      // missed room-change diffs and false diffs on later visits.
+      if (!failed) {
+        try {
+          window.localStorage.setItem(
+            SCHEDULE_SNAPSHOT_KEY,
+            JSON.stringify(snapshot)
+          );
+        } catch {
+          // Storage unavailable: skip change detection this visit.
+        }
       }
       setRoomChanges(changes);
 
@@ -166,7 +170,9 @@ export default function ScheduleView() {
       const nowMinutes = romeMinutes(now);
       for (const event of events) {
         if (event.date !== todayKey) continue;
-        const diff = toMinutes(event.start) - nowMinutes;
+        const start = normalizeTime(event.start);
+        if (!start) continue;
+        const diff = toMinutes(start) - nowMinutes;
         if (diff <= 0 || diff > 15) continue;
         const key = `bolibero-notified-${event.date}|${event.start}|${event.class}`;
         if (window.localStorage.getItem(key)) continue;
