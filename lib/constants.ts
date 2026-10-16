@@ -236,13 +236,28 @@ export const MAX_CLASSES = 20;
  * everywhere so the same entity never compares unequal.
  */
 export const normalizeEntity = (value: string): string =>
-  value.replace(/\s+/g, " ").trim().toLowerCase();
+  value
+    .replace(/[\u2010-\u2015\u2212]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
 // Upstream marks study-room events with "Aule studio" as the whole
 // description (the type cell then says "Attivita'"); older feeds carry the
 // marker in the type cell. Only exact whole-value matches count: substring
 // rules on the free-text class title made real classes look like free time.
 const STUDY_MARKERS = ["aule studio", "aula studio"];
+
+const VIRTUAL_ROOM_MARKERS = ["virtual", "off campus", "fuori sede", "live room"];
+
+/**
+ * Upstream also lists non-rooms (virtual attendance markers) in the room
+ * cell; those must never link to a room page.
+ */
+export function isLinkableRoomName(roomName: string): boolean {
+  const normalized = normalizeEntity(roomName);
+  return normalized.length > 0 && !VIRTUAL_ROOM_MARKERS.some((marker) => normalized.includes(marker));
+}
 
 const hasStudyMarker = (event: { type: string; description: string }) =>
   STUDY_MARKERS.includes(normalizeEntity(event.type)) ||

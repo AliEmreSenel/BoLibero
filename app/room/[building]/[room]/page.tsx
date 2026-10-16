@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import RoomCalendar from "./RoomCalendar";
-import { BUILDING_CONFIG } from "@/lib/constants";
+import { BUILDING_CONFIG, getBuildingDisplayName, isLinkableRoomName, normalizeEntity } from "@/lib/constants";
 import { SITE_URL } from "@/lib/site";
 
 type Props = {
@@ -38,10 +38,15 @@ function resolveRoom(building: string, room: string) {
     const buildingKey = decodePathSegment(building);
     const roomName = decodePathSegment(room);
     const data = BUILDING_CONFIG[buildingKey];
-    if (!data || !data.rooms.includes(roomName)) {
+    // Config rooms match with the shared normalization (config Roentgen codes
+    // embed U+2011, the feed sends ASCII hyphens). Rooms the feed lists but
+    // the config lacks are real rooms on campus — render them; RoomCalendar
+    // fetches purely by room name. Virtual attendance markers 404.
+    const knownRoom = data?.rooms.some((r) => normalizeEntity(r) === normalizeEntity(roomName)) ?? false;
+    if (!knownRoom && !isLinkableRoomName(roomName)) {
         notFound();
     }
-    return { buildingKey, roomName, data };
+    return { buildingKey, roomName };
 }
 
 export async function generateMetadata(
@@ -49,9 +54,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const { building, room } = await params;
 
-    const { buildingKey, roomName, data } = resolveRoom(building, room);
+    const { buildingKey, roomName } = resolveRoom(building, room);
 
-    const building_name = data.displayName;
+    const building_name = getBuildingDisplayName(buildingKey);
     const room_name = roomName;
     const title = `${room_name} · ${building_name}`
     const description = `Live schedule and real-time availability for ${room_name} in ${building_name} at Bocconi University. See when this room is free and plan your time on campus.`

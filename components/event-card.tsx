@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import type { ScheduleEvent } from "@/lib/schedule-fetcher";
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import { getEventTypeLabel, type Language } from "@/lib/i18n";
+import { isLinkableRoomName } from "@/lib/constants";
 
 interface EventCardProps {
   event: ScheduleEvent;
@@ -70,14 +71,20 @@ export function EventCard({
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" />
               {event.rooms.map((room, idx) => (
-                <Link
-                  key={`${room.building}-${room.roomName}-${idx}`}
-                  href={`/room/${encodeURIComponent(room.building)}/${encodeURIComponent(room.roomName)}`}
-                >
-                  <Badge variant="outline">
-                    {room.roomName}, {fetcher.getBuildingDisplayName(room.building)}
+                isLinkableRoomName(room.roomName) ? (
+                  <Link
+                    key={`${room.building}-${room.roomName}-${idx}`}
+                    href={`/room/${encodeURIComponent(room.building)}/${encodeURIComponent(room.roomName)}`}
+                  >
+                    <Badge variant="outline">
+                      {room.roomName}, {fetcher.getBuildingDisplayName(room.building)}
+                    </Badge>
+                  </Link>
+                ) : (
+                  <Badge key={`${room.building}-${room.roomName}-${idx}`} variant="outline">
+                    {room.roomName}
                   </Badge>
-                </Link>
+                )
               ))}
             </div>
           )}
