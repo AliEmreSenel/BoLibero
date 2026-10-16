@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { fetchBocconiEvents } from "@/lib/bocconi-calendar";
 import { ProfessorsIndex } from "./ProfessorsIndex";
+import { fetchProfessorNames } from "@/lib/schedule-fetcher";
 
 export const revalidate = 86_400;
 
@@ -12,24 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfessorsPage() {
-  let professors: string[] = [];
-  try {
-    const start = new Date();
-    const end = new Date(Date.now() + 13 * 30 * 86_400_000);
-    const events = await fetchBocconiEvents({
-      startDate: start,
-      endDate: end,
-      revalidateSeconds: 3600,
-      timeoutMs: 25_000,
-    });
-    const names = new Set<string>();
-    for (const event of events) {
-      for (const teacher of event.teachers) names.add(teacher);
-    }
-    professors = Array.from(names).sort((a, b) => a.localeCompare(b, "it"));
-  } catch {
-    // Empty index: the page shows its own empty state and refetches next hour.
-  }
+  // A total scrape failure throws so Next keeps serving the last-good ISR
+  // page instead of caching the empty state for a full day.
+  const professors = await fetchProfessorNames();
 
   return (
     <ProfessorsIndex professors={professors} />
