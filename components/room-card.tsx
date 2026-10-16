@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import Link from "next/link";
 import { MapPin, ArrowRight, Clock, Star } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,11 +28,11 @@ interface RoomCardProps {
   buildingClosedMessage: string;
   showStatus?: boolean;
   isFavorite: boolean;
-  onToggleFavorite: () => void;
+  onToggleFavorite: (building: string, room: string) => void;
   t: Translations;
 }
 
-export function RoomCard({
+export const RoomCard = memo(function RoomCard({
   building,
   room,
   buildingDisplayName,
@@ -64,7 +65,7 @@ export function RoomCard({
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={onToggleFavorite}
+              onClick={() => onToggleFavorite(building, room)}
               aria-label={isFavorite ? t.removeFavorite : t.addFavorite}
               aria-pressed={isFavorite}
             >
@@ -148,4 +149,4 @@ export function RoomCard({
       </CardContent>
     </Card>
   );
-}
+});
