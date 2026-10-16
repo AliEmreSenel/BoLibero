@@ -11,6 +11,7 @@ import {
   exactRoomMatch,
   toClientEvent,
 } from "@/lib/event-matching";
+import { upstreamJsonFailure } from "@/app/api/upstream-failure";
 
 // One parser, one truth: the UI pages get the same server-parsed events as the
 // ICS feed (parseBocconiSchedule), replacing the browser DOMParser twin.
@@ -68,10 +69,17 @@ export async function GET(request: NextRequest) {
       startDate: new Date(`${from}T00:00:00Z`),
       endDate: new Date(`${to}T00:00:00Z`),
       room: room || undefined,
-      query: room || classId ? undefined : prof,
+      // Scope the scrape upstream: an empty query fetches the whole campus.
+      query: room ? undefined : classId ? parseClassId(classId)?.code : prof,
       revalidateSeconds: UPSTREAM_REVALIDATE_SECONDS,
       timeoutMs: day ? DAY_MODE_TIMEOUT_MS : classId ? DAY_MODE_TIMEOUT_MS : undefined,
     });
+
+    // Zero events for an unfiltered whole-campus day query means the scrape
+    // broke, not that the campus is empty. Fail loudly (no CDN write).
+    if (day && events.length === 0) {
+      throw new Error("Zero events scraped for day mode");
+    }
 
     const matched = events.filter((event) => {
       const inRange = event.date >= from && event.date <= to;
@@ -97,9 +105,6 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error("events route: upstream failure:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch schedule data" },
-      { status: 502, headers: { "Cache-Control": "no-store" } },
-    );
+    return upstreamJsonFailure("Failed to fetch schedule data");
   }
 }

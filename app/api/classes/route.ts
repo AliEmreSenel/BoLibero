@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
+import { upstreamJsonFailure } from "@/app/api/upstream-failure";
 import {
   eventTitle,
   fetchBocconiEvents,
@@ -40,11 +41,12 @@ export async function GET() {
       ranges.map((range) => fetchBocconiEvents(range))
     );
     const failures = settled.filter((result) => result.status === "rejected").length;
-    if (failures === settled.length) {
-      throw new Error("All class catalog shards failed");
-    }
+    // A truncated catalog from surviving shards would publish a campus-wide
+    // list with vanished courses and be cached for 6h, so any shard failure
+    // fails the whole request (no CDN write).
     if (failures > 0) {
       Sentry.captureMessage(`Class catalog: ${failures}/${settled.length} shards failed`, "warning");
+      throw new Error(`${failures}/${settled.length} class catalog shards failed`);
     }
     const events = settled.flatMap(
       (result) => (result.status === "fulfilled" ? result.value : [])
@@ -88,9 +90,6 @@ export async function GET() {
     );
   } catch (error) {
     console.error("Failed to build class catalog:", error);
-    return NextResponse.json(
-      { error: "Unable to load the class catalog" },
-      { status: 502 }
-    );
+    return upstreamJsonFailure("Unable to load the class catalog");
   }
 }
