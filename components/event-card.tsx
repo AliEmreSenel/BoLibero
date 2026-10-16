@@ -45,12 +45,13 @@ export function EventCard({
         )}
 
         {event.description && (
-          <div
-            className="text-sm text-muted-foreground mb-3"
-            dangerouslySetInnerHTML={{
-              __html: event.description.replace(/<br\/?>/g, ""),
-            }}
-          />
+          <div className="text-sm text-muted-foreground mb-3">
+            {event.description.split("\n").map((line, index) => (
+              <span key={index} className="block">
+                {line}
+              </span>
+            ))}
+          </div>
         )}
 
         <div className="flex flex-col gap-2 text-sm">

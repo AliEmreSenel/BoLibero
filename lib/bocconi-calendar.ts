@@ -58,16 +58,14 @@ const decodeHtmlEntities = (value: string) => {
   });
 };
 
-const htmlToText = (html: string, preserveBreaks = false) => {
+export const htmlToText = (html: string, preserveBreaks = false) => {
   const breaks = preserveBreaks ? "\n" : " ";
-  return decodeHtmlEntities(
-    html
-      .replace(/<br\s*\/?>/gi, breaks)
-      .replace(/<\/(p|div|li)>/gi, breaks)
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-  )
+  return decodeHtmlEntities(html)
+    .replace(/<br\s*\/?>/gi, breaks)
+    .replace(/<\/(p|div|li)>/gi, breaks)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
     .replace(/[ \t]+/g, " ")
     .replace(/\s+([,.;:])/g, "$1")
     .replace(/ *\n */g, "\n")
