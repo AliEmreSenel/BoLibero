@@ -112,7 +112,7 @@ export default function RoomCalendar() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+          <div role="alert" className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
             {error}
           </div>
         )}

@@ -452,7 +452,7 @@ export default function BSpace() {
         )}
 
         {isRefreshing && (
-          <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-primary">
+          <div role="status" className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-primary">
             <div className="flex items-center gap-2 font-medium">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span>{t.loading}</span>
@@ -461,7 +461,7 @@ export default function BSpace() {
         )}
 
         {allBuildingsClosed && (
-          <div className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {t.allBuildingsClosed}
           </div>
         )}
@@ -474,7 +474,7 @@ export default function BSpace() {
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+          <div role="alert" className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span>{t.error}</span>
               <Button
@@ -492,7 +492,7 @@ export default function BSpace() {
         {isRefreshing ? (
           <RoomGridSkeleton count={9} />
         ) : showNoDataState ? (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center text-destructive">
+          <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center text-destructive">
             {t.noDataForDate}
           </div>
         ) : (
@@ -523,7 +523,7 @@ export default function BSpace() {
 
         {/* No Results */}
         {filteredRooms.length === 0 && !error && !isInitialLoading && !isRefreshing && (
-          <div className="text-center py-12">
+          <div role="status" className="text-center py-12">
             <div className="text-muted-foreground text-lg">
               {availabilityActive
                 ? noAvailabilityMessage
