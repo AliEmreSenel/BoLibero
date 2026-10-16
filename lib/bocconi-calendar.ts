@@ -161,7 +161,8 @@ export function parseBocconiSchedule(html: string): BocconiEvent[] {
     const code = htmlToText(codeStrong?.[1] ?? cells[4])
       .replace(/\s*(?:Cl\.|Classe)\s*[a-z0-9]+.*/i, "")
       .trim();
-    const section = htmlToText(cells[4]).match(/(?:Cl\.|Classe)\s*[a-z0-9]+/i)?.[0] ?? "";
+    const sectionMatch = htmlToText(cells[4]).match(/(?:Cl\.|Classe)\s*([a-z0-9]+)/i);
+    const section = sectionMatch ? `Cl.${sectionMatch[1]}` : "";
     const teacherRaw = htmlToText(cells[6]);
     const roomRaw = htmlToText(cells[7]);
     const rawStart = htmlToText(cells[1]);

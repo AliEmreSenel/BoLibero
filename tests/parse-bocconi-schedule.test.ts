@@ -49,9 +49,9 @@ describe("parseBocconiSchedule", () => {
     expect(events[2].end).toBe("09:45");
   });
 
-  it("extracts sections written as 'Cl. 43' with a space", () => {
+  it("canonicalizes sections written as 'Cl. 43' with a space", () => {
     expect(events[2].code).toBe("30062");
-    expect(events[2].className).toBe("Cl. 43");
+    expect(events[2].className).toBe("Cl.43");
   });
 
   it("decodes Italian named entities and keeps out-of-range numeric entities raw", () => {
