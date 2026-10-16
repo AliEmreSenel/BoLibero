@@ -3,7 +3,7 @@ import { SITE_URL } from "@/lib/site";
 
 export const runtime = "nodejs";
 
-const MAX_ENCODED_ENVELOPE_SIZE = 1_500_000;
+const MAX_ENCODED_ENVELOPE_SIZE = 1_350_000;
 const RATE_LIMIT_PER_MINUTE = 60;
 
 // Env-driven first (set NEXT_PUBLIC_SENTRY_DSN on Vercel to rotate without a
@@ -20,7 +20,7 @@ const parseDsn = (dsn: string): RelayTarget | null => {
     try {
         const url = new URL(dsn);
         const projectId = url.pathname.split("/").filter(Boolean).pop();
-        if (!url.username || !projectId || !/^https?$/.test(url.protocol)) return null;
+        if (!url.username || !projectId || !/^https?:$/.test(url.protocol)) return null;
         return {
             envelopeUrl: `${url.protocol}//${url.host}/api/${projectId}/envelope/`,
             publicKey: url.username,
@@ -34,11 +34,16 @@ const parseDsn = (dsn: string): RelayTarget | null => {
 // which is enough to cap a single abuser.
 const buckets = new Map<string, { count: number; windowStart: number }>();
 
+const RATE_LIMIT_BUCKET_CAP = 10_000;
+
 const isRateLimited = (ip: string): boolean => {
     const now = Date.now();
     const bucket = buckets.get(ip);
     if (!bucket || now - bucket.windowStart > 60_000) {
-        if (buckets.size > 10_000) buckets.clear();
+        if (buckets.size >= RATE_LIMIT_BUCKET_CAP) {
+            const oldest = buckets.keys().next().value;
+            if (oldest !== undefined) buckets.delete(oldest);
+        }
         buckets.set(ip, { count: 1, windowStart: now });
         return false;
     }
@@ -46,13 +51,15 @@ const isRateLimited = (ip: string): boolean => {
     return bucket.count > RATE_LIMIT_PER_MINUTE;
 };
 
+const clientIp = (request: Request): string =>
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown";
+
 const isAllowedOrigin = (origin: string): boolean => {
     try {
         const host = new URL(origin).host;
-        return (
-            host === new URL(SITE_URL).host ||
-            host.endsWith(".vercel.app")
-        );
+        return host === new URL(SITE_URL).host || host === process.env.VERCEL_URL;
     } catch {
         return false;
     }
@@ -68,9 +75,16 @@ export async function POST(request: Request) {
         return new NextResponse(null, { status: 403 });
     }
 
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-    if (isRateLimited(ip)) {
-        return new NextResponse(null, { status: 429 });
+    if (isRateLimited(clientIp(request))) {
+        return new NextResponse(null, { status: 429, headers: { "retry-after": "60" } });
+    }
+
+    if (!(request.headers.get("content-type") ?? "").startsWith("text/plain")) {
+        return new NextResponse(null, { status: 415 });
+    }
+
+    if (Number(request.headers.get("content-length")) > MAX_ENCODED_ENVELOPE_SIZE) {
+        return new NextResponse(null, { status: 413 });
     }
 
     const encodedEnvelope = await request.text();
