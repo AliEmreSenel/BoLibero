@@ -206,7 +206,7 @@ export const translations = {
       "Your language, theme, room filters and calendar class bundle are stored in your browser's localStorage. They never leave your device and are deleted when you clear your browser data.",
     privacySentryTitle: "Error telemetry (Sentry)",
     privacySentry:
-      "When the app hits a runtime error, technical details (error message, stack trace, browser and page URL) are sent to Sentry so we can fix bugs. No names, classes, cookies or browsing history are sent.",
+      "When the app hits a runtime error, technical details (error message, stack trace, browser and page URL), console warnings and errors, and a pseudonymized session replay are sent to Sentry so we can fix bugs. In replays all on-screen text is masked, all inputs are masked and all images and videos are blocked, so names, classes and personal data are never visible. No cookies or browsing history are sent.",
     privacyContactTitle: "Contact",
     privacyContact:
       "Questions, data removal requests and bug reports: open an issue on our GitHub repository.",
@@ -420,7 +420,7 @@ export const translations = {
       "Lingua, tema, filtri sulle aule e il gruppo di lezioni del calendario sono salvati nel localStorage del tuo browser. Non lasciano mai il dispositivo e si cancellano svuotando i dati del browser.",
     privacySentryTitle: "Telemetria degli errori (Sentry)",
     privacySentry:
-      "Quando l'app incontra un errore, i dettagli tecnici (messaggio, stack trace, browser e URL della pagina) vengono inviati a Sentry per correggere i bug. Non vengono inviati nomi, corsi, cookie o cronologia di navigazione.",
+      "Quando l'app incontra un errore, a Sentry vengono inviati dettagli tecnici (messaggio, stack trace, browser e URL della pagina), avvisi ed errori della console e una registrazione pseudonimizzata della sessione, per correggere i bug. Nelle registrazioni tutto il testo e tutti i campi di inserimento sono mascherati e tutte le immagini e i video sono bloccati, quindi nomi, corsi e dati personali non sono mai visibili. Non vengono inviati cookie né cronologia di navigazione.",
     privacyContactTitle: "Contatti",
     privacyContact:
       "Domande, richieste di cancellazione dati e segnalazioni: apri una issue sul nostro repository GitHub.",
