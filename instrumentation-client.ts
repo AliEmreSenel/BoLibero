@@ -36,7 +36,8 @@ function makeOpaqueTransport(options: Parameters<typeof Sentry.createTransport>[
 }
 
 Sentry.init({
-    dsn: "https://0bbc394747dec3e3ac0609076b53bb78@o4509701983174656.ingest.de.sentry.io/4510102691381328",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN ??
+        "https://0bbc394747dec3e3ac0609076b53bb78@o4509701983174656.ingest.de.sentry.io/4510102691381328",
     transport: makeOpaqueTransport,
 
     // This is a hobby-tier project: dev traffic must not consume quota, and
@@ -46,7 +47,11 @@ Sentry.init({
 
     // Add optional integrations for additional features
     integrations: [
-        Sentry.replayIntegration(),
+        Sentry.replayIntegration({
+            maskAllText: true,
+            maskAllInputs: true,
+            blockAllMedia: true,
+        }),
         Sentry.consoleLoggingIntegration({
             // Console "log" calls contain scraped schedules and professor
             // names; only warnings and errors belong in telemetry.
