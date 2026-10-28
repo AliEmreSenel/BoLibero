@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ProfessorsIndex } from "./ProfessorsIndex";
-import { fetchProfessorNames } from "@/lib/schedule-fetcher";
+import { fetchProfessorNames } from "@/lib/professors";
 
 export const revalidate = 86_400;
 
