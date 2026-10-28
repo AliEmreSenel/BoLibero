@@ -45,7 +45,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("getFreeTimeSlots is date-scoped", () => {
+describe("getFreeTimeSlots", () => {
   it("reports slots from the requested date, not the last fetched one", async () => {
     vi.stubGlobal(
       "fetch",
@@ -63,6 +63,27 @@ describe("getFreeTimeSlots is date-scoped", () => {
     ]);
     expect(fetcher.getFreeTimeSlots("Sarfatti 25", "Aula 1", DAY2)).toEqual([
       { start: "08:30", end: "20:00" },
+    ]);
+  });
+
+  it("omits 15-minute class breaks while keeping longer free periods", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        response([
+          event({ start: "08:30", end: "10:00" }),
+          event({ start: "10:15", end: "11:45" }),
+          event({ start: "12:00", end: "13:30" }),
+          event({ start: "14:45", end: "16:15" }),
+        ])
+      )
+    );
+
+    await fetcher.fetchScheduleForDate(DAY1);
+
+    expect(fetcher.getFreeTimeSlots("Sarfatti 25", "Aula 1", DAY1)).toEqual([
+      { start: "13:30", end: "14:45" },
+      { start: "16:15", end: "20:00" },
     ]);
   });
 });

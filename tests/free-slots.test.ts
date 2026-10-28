@@ -49,11 +49,11 @@ describe("computeFreeSlots", () => {
     expect(slots).toEqual([{ start: "08:00", end: "20:00" }]);
   });
 
-  it("drops gaps shorter than the minimum", () => {
+  it.each([10, 15])("drops %i-minute class breaks", (gapMinutes) => {
     const slots = computeFreeSlots(
       [
         { start: "08:00", end: "10:00" },
-        { start: "10:10", end: "12:00" },
+        { start: `10:${gapMinutes}`, end: "12:00" },
       ],
       DAY.start,
       DAY.end
@@ -65,13 +65,13 @@ describe("computeFreeSlots", () => {
     const slots = computeFreeSlots(
       [
         { start: "08:00", end: "10:00" },
-        { start: "10:15", end: "12:00" },
+        { start: "10:16", end: "12:00" },
       ],
       DAY.start,
       DAY.end
     );
     expect(slots).toEqual([
-      { start: "10:00", end: "10:15" },
+      { start: "10:00", end: "10:16" },
       { start: "12:00", end: "20:00" },
     ]);
   });
