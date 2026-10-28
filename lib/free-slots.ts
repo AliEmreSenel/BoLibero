@@ -9,12 +9,13 @@ export interface SlotRange {
 // Times are normalized, invalid rows skipped, events crossing midnight are
 // split into evening + early-morning parts, and intervals are clamped to the
 // building's opening hours so overlapping classes cannot invent free time.
-// A gap is free when it is at least minGapMinutes long.
+// A gap is free when it is at least minGapMinutes long. By default, exclude
+// class breaks of 15 minutes or less.
 export const computeFreeSlots = (
   busyTimes: Array<{ start: string; end: string }>,
   dayStart: string,
   dayEnd: string,
-  minGapMinutes = 15
+  minGapMinutes = 16
 ): SlotRange[] => {
   const dayStartMin = toMinutes(dayStart);
   const dayEndMin = toMinutes(dayEnd);
