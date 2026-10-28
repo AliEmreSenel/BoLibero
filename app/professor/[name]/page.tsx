@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import ProfessorCalendar from "./ProfessorCalendar";
 import { SITE_URL } from "@/lib/site";
-import { fetchProfessorNames } from "@/lib/schedule-fetcher";
+import { fetchProfessorNames } from "@/lib/professors";
 
 // The page body is a static client shell (schedule data is fetched in the
 // browser), so shell renders are hourly-cached.
@@ -12,11 +12,10 @@ type Props = {
     params: Promise<{ name: string }>
 }
 
-// Prerender every known professor so sitemap hits never pay a cold on-demand
-// render; the list comes from the same sharded scrape as /professors.
-export async function generateStaticParams() {
-    const professors = await fetchProfessorNames();
-    return professors.map((name) => ({ name: encodeURIComponent(name) }));
+// Generate each page on its first visit, then serve its HTML and metadata
+// from the hourly ISR cache instead of rebuilding hundreds of pages on deploy.
+export function generateStaticParams() {
+    return [];
 }
 
 function decodePathSegment(value: string): string {
