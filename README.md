@@ -1,30 +1,60 @@
-# Json calendar app
+# BoLibero
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Find a free classroom at Bocconi University, right now or at any time of the day. Live at **[bolibero.it](https://bolibero.it)**.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/aliemresenels-projects/v0-json-calendar-app)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/r98ctyAxaTI)
+BoLibero reads the public Bocconi timetable ([didattica.unibocconi.it](https://didattica.unibocconi.it)) and shows when each room in Leoni (Sarfatti 25) and Velodromo (Sraffa 13) has no class scheduled.
 
-## Overview
+> Unofficial and not affiliated with Bocconi University. Only rooms with an official study session ("Aule studio") are formally open for studying. Building opening hours are approximate.
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## Features
 
-## Deployment
+- **Rooms:** every room's day as a bar, with its free slots. The status says how long a room stays free, or when it frees up.
+- **Filters:**
+  - "Available now", which also lists rooms freeing up within 15 minutes
+  - free ≥ 2h
+  - study sessions only
+  - favorites
+  - building, search, and a free-from/to time range
+- **Time slider:** see which rooms are free at any time of the day, not just now.
+- **Room and professor pages:** a month calendar and a day view of classes and free gaps.
+- **Class calendar:** pick your classes and subscribe to a calendar feed (`.ics`) that stays up to date in Google, Apple or Outlook Calendar. Each class's exams are included.
+- **My Schedule:** your next 7 days, with room-change alerts and optional class reminders.
+- **Exams tracker:** your own exams and deadlines, exportable to your calendar.
+- English and Italian, light and dark mode, works well on phones.
 
-Your project is live at:
+## Development
 
-**[https://vercel.com/aliemresenels-projects/v0-json-calendar-app](https://vercel.com/aliemresenels-projects/v0-json-calendar-app)**
+Requires [Bun](https://bun.sh) and Node 22+.
 
-## Build your app
+```bash
+bun install
+bun run dev        # http://localhost:3000
+bun run test       # vitest
+bun run typecheck
+bun run lint
+bun run build
+```
 
-Continue building your app on:
+CI runs typecheck, lint, tests and build on every pull request.
 
-**[https://v0.app/chat/projects/r98ctyAxaTI](https://v0.app/chat/projects/r98ctyAxaTI)**
+### Environment
 
-## How It Works
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_URL` | Canonical site URL (defaults to `https://bolibero.it`) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional Sentry error reporting |
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## How it works
+
+- `app/api/*` fetch and parse the upstream timetable on the server, with caching:
+  - `events`: by day, room, professor or class
+  - `classes`: the class catalog
+  - `calendar.ics`: subscription feeds
+- `lib/bocconi-calendar.ts` holds the HTML scraper and the class/exam matching.
+- `lib/constants.ts` lists the tracked buildings and rooms. `lib/building-hours.ts` has the approximate opening hours and closures.
+- `lib/free-slots.ts` and `lib/availability.ts` turn events into free windows and a room's status. 15-minute breaks between classes don't count as free time.
+- Next.js (App Router), React, Tailwind CSS. Deployed on Vercel.
+
+## Contributing
+
+Bug reports and room or building-hours corrections are welcome. Open an [issue](https://github.com/AliEmreSenel/BoLibero/issues).
