@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import {
   eventTitle,
   fetchBocconiEvents,
-  makeClassId,
+  eventMatchesClass,
   parseClassId,
   SUBSCRIPTION_REVALIDATE_SECONDS,
   SUBSCRIPTION_STALE_SECONDS,
@@ -142,7 +142,7 @@ function createCalendar(events: BocconiEvent[]) {
       `DTSTAMP:${generatedAt}`,
       `DTSTART;TZID=Europe/Rome:${localDateTime(event.date, start)}`,
       `DTEND;TZID=Europe/Rome:${localDateTime(event.date, end)}`,
-      `SUMMARY:${icsEscape(`${eventTitle(event)} (${event.className})`)}`,
+      `SUMMARY:${icsEscape(`${eventTitle(event)} (${event.className || event.type})`)}`,
       `DESCRIPTION:${icsEscape(details)}`,
       `LOCATION:${icsEscape(event.roomRaw)}`,
       "STATUS:CONFIRMED",
@@ -178,7 +178,6 @@ export async function GET(request: NextRequest) {
   const selectedClasses = selected.filter(
     (item): item is NonNullable<typeof item> => Boolean(item)
   );
-  const selectedIds = new Set(selectedClasses.map((item) => item.id));
   const uniqueCodes = Array.from(
     new Set(selectedClasses.map((item) => item.code))
   );
@@ -218,8 +217,9 @@ export async function GET(request: NextRequest) {
     const seen = new Set<string>();
     const events = eventGroups
       .flat()
+      // Lessons of the selected sections plus each course's exams.
       .filter((event) =>
-        selectedIds.has(makeClassId(event.code, event.className))
+        selectedClasses.some((item) => eventMatchesClass(event, item))
       )
       .filter((event) => {
         const key = eventUid(event);

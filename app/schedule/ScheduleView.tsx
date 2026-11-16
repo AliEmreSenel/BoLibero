@@ -104,10 +104,18 @@ export default function ScheduleView() {
         })
       );
       const merged: ClientEvent[] = [];
+      // A course's exams come back once per selected section of that course.
+      const seenEvents = new Set<string>();
       let failed = false;
       for (const result of results) {
-        if (result.status === "fulfilled") merged.push(...result.value);
-        else if (result.reason?.name !== "AbortError") failed = true;
+        if (result.status === "fulfilled") {
+          for (const event of result.value) {
+            const key = `${eventIdentity(event)}|${event.description}`;
+            if (seenEvents.has(key)) continue;
+            seenEvents.add(key);
+            merged.push(event);
+          }
+        } else if (result.reason?.name !== "AbortError") failed = true;
       }
       if (controller.signal.aborted) return;
       merged.sort(
@@ -197,7 +205,7 @@ export default function ScheduleView() {
         notified.push(id);
         safeSetItem(NOTIFIED_EVENTS_KEY, JSON.stringify(notified));
         new Notification(t.reminderTitle, {
-          body: `${event.class} · ${event.start} · ${event.room_raw}`,
+          body: `${eventCourseTitle(event)} · ${event.start} · ${event.room_raw}`,
         });
       }
     };

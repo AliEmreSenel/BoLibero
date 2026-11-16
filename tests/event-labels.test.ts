@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getEventTypeLabel } from "@/lib/i18n";
 import { eventCourseTitle } from "@/lib/event-matching";
-import { summarizeClass } from "@/lib/bocconi-calendar";
+import { eventMatchesClass, summarizeClass } from "@/lib/bocconi-calendar";
 
 describe("getEventTypeLabel", () => {
   it("translates the upstream types", () => {
@@ -54,5 +54,26 @@ describe("summarizeClass", () => {
       { day: 1, start: "08:30" },
       { day: 4, start: "10:15" },
     ]);
+  });
+});
+
+describe("eventMatchesClass", () => {
+  const selected = { code: "30001", section: "Cl.07" };
+
+  it("matches the selected section's lessons only", () => {
+    expect(eventMatchesClass({ code: "30001", className: "Cl.07", type: "Lezione" }, selected)).toBe(true);
+    expect(eventMatchesClass({ code: "30001", className: "Cl.08", type: "Lezione" }, selected)).toBe(false);
+    expect(eventMatchesClass({ code: "30002", className: "Cl.07", type: "Lezione" }, selected)).toBe(false);
+  });
+
+  it("includes the course's exams, which have no section", () => {
+    for (const type of ["Esame (S)", "Esame (O)", "Esame (IS)"]) {
+      expect(eventMatchesClass({ code: "30001", className: "", type }, selected)).toBe(true);
+    }
+    expect(eventMatchesClass({ code: "30002", className: "", type: "Esame (S)" }, selected)).toBe(false);
+  });
+
+  it("ignores other section-less events of the course", () => {
+    expect(eventMatchesClass({ code: "30001", className: "", type: "Attivita'" }, selected)).toBe(false);
   });
 });

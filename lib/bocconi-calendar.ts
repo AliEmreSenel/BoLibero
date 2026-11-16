@@ -180,6 +180,20 @@ const parseRooms = (roomField: string): BocconiRoom[] =>
       };
     });
 
+// Exams are published per course ("Esame (S)", "Esame (O)", …) with the code
+// but no class section, so they belong to every section of that course.
+export const isExamEvent = (event: Pick<BocconiEvent, "type">) =>
+  /^esame\b/i.test(event.type.trim());
+
+/** Whether an event belongs to a subscribed class: its own lessons plus the course's exams. */
+export const eventMatchesClass = (
+  event: Pick<BocconiEvent, "code" | "className" | "type">,
+  selected: { code: string; section: string }
+) =>
+  event.code.trim() === selected.code &&
+  (event.className.trim() === selected.section ||
+    (!event.className.trim() && isExamEvent(event)));
+
 export const makeClassId = (code: string, section: string) =>
   `${code.trim()}::${section.trim()}`;
 
