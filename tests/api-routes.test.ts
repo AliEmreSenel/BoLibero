@@ -129,6 +129,13 @@ describe("GET /api/classes", () => {
       "20127::Cl.12",
       "30062::Cl.43",
     ]);
+    const maths = body.classes.find((item: { id: string }) => item.id === "30062::Cl.43");
+    expect(maths.teachers).toEqual(["SAVOCHKIN A.", "MILANI S.", "GARCIA-LOPEZ J."]);
+    // 1 Oct 2026 is a Thursday (4), 2 Oct a Friday (5).
+    expect(maths.meetings).toEqual([
+      { day: 4, start: "10:15" },
+      { day: 5, start: "08:30" },
+    ]);
   });
 });
 

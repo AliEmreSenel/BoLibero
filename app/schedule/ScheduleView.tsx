@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Bell, CalendarPlus, Loader2 } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
-import { ClassDetails, TimeCell, roomHref, roomLabel } from "@/components/class-item";
+import { ClassDetails, TimeCell, eventCourseTitle, roomHref, roomLabel } from "@/components/class-item";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey, romeMinutes, normalizeTime, toMinutes } from "@/lib/time";
@@ -31,6 +31,7 @@ interface RoomChange {
   date: string;
   start: string;
   className: string;
+  title: string;
   from: string;
   to: string;
 }
@@ -135,6 +136,7 @@ export default function ScheduleView() {
             date: event.date,
             start: event.start,
             className: event.class,
+            title: eventCourseTitle(event),
             from: before,
             to: event.room_raw,
           });
@@ -285,7 +287,7 @@ export default function ScheduleView() {
                     {roomChanges.map((change, index) => (
                       <li key={index}>
                         {formatDateFull(parseISO(change.date), language)} {change.start} —{" "}
-                        <strong>{change.className}</strong>: {change.from} → {change.to}
+                        <strong>{change.title}</strong>: {change.from} → {change.to}
                       </li>
                     ))}
                   </ul>

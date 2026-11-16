@@ -80,6 +80,18 @@ describe("roomStatusAt", () => {
     expect(roomStatusAt(long, m("10:50")).longEnough).toBe(true);
   });
 
+  it("treats free time running into a study session as one stretch", () => {
+    const touching = buildWindows(
+      [{ start: "12:00", end: "17:00" }],
+      [{ start: "13:45", end: "17:00" }]
+    );
+    const status = roomStatusAt(touching, m("13:40"));
+    expect(status.state).toBe("free");
+    expect(status.current?.kind).toBe("free");
+    expect(status.until).toBe(m("17:00"));
+    expect(status.longEnough).toBe(true);
+  });
+
   it("finds the next window for busy rooms", () => {
     expect(roomStatusAt(windows, m("13:10")).next?.start).toBe(m("14:30"));
   });

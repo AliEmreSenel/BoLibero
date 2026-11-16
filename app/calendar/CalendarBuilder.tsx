@@ -16,6 +16,8 @@ import { PageLayout } from "@/components/page-layout";
 import { MAX_CLASSES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { fill, useTranslation } from "@/lib/i18n";
+import { format } from "date-fns";
+import { it, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
   SAVED_CLASSES_KEY,
@@ -30,6 +32,8 @@ interface ClassOption {
   code: string;
   section: string;
   title: string;
+  teachers?: string[];
+  meetings?: Array<{ day: number; start: string }>;
 }
 
 export default function CalendarBuilder() {
@@ -154,10 +158,30 @@ export default function CalendarBuilder() {
   };
 
   const subscribeBand = "flex min-h-12 items-center justify-between gap-2 px-4 font-bold";
+  const locale = language === "it" ? it : enUS;
+  // 1 Jan 2024 is a Monday; day is 0 = Sunday … 6 = Saturday.
+  const weekday = (day: number) =>
+    format(new Date(2024, 0, 1 + ((day + 6) % 7)), "EEE", { locale });
+  const classSummary = (item: ClassOption) =>
+    [
+      (item.teachers ?? []).join(", "),
+      // Back-to-back double sessions share a day: "Mon 16:30/18:15, Thu 13:00".
+      (item.meetings ?? [])
+        .reduce<Array<{ day: number; starts: string[] }>>((days, meeting) => {
+          const last = days[days.length - 1];
+          if (last && last.day === meeting.day) last.starts.push(meeting.start);
+          else days.push({ day: meeting.day, starts: [meeting.start] });
+          return days;
+        }, [])
+        .map(({ day, starts }) => `${weekday(day)} ${starts.join("/")}`)
+        .join(", "),
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
   return (
     <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className={cn("mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6", selected.length > 0 && "pb-32 lg:pb-5")}>
+      <div className="mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6">
         <div className="mb-3.5">
           <h1 className="text-2xl font-extrabold tracking-tight">{t.classCalendarTitle}</h1>
           <p className="max-w-3xl text-muted-foreground">{t.classCalendarDescription}</p>
@@ -220,8 +244,12 @@ export default function CalendarBuilder() {
                             <strong>{item.title}</strong>{" "}
                             <span className="text-muted-foreground">· {item.section}</span>
                           </p>
-                          <p className="text-xs text-muted-foreground sm:hidden">
-                            {t.classNo} {item.code}
+                          <p className="truncate text-xs text-muted-foreground">
+                            <span className="sm:hidden">
+                              {item.code}
+                              {classSummary(item) ? " · " : ""}
+                            </span>
+                            {classSummary(item)}
                           </p>
                         </div>
                         <button
@@ -389,32 +417,32 @@ export default function CalendarBuilder() {
         </div>
 
         <p className="mt-6 text-xs leading-relaxed text-muted-foreground">{t.disclaimer}</p>
+        {subscriptionUrl && (
+          <div className="sticky bottom-0 z-30 -mx-3 mt-4 border-t bg-card pb-[env(safe-area-inset-bottom)] sm:-mx-6 lg:hidden">
+            <div className="flex items-center justify-between gap-2 px-3 py-2 text-[13px] text-muted-foreground">
+              <span>{fill(t.classesSelected, { n: selected.length, max: MAX_CLASSES })}</span>
+              <button
+                type="button"
+                onClick={copyUrl}
+                className="min-h-8 rounded-lg border border-input bg-card px-2.5 font-semibold text-foreground"
+              >
+                {copied ? t.copied : t.copyFeedUrl}
+              </button>
+            </div>
+            <a
+              href={webcalUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setSubscribed(true)}
+              className={cn(subscribeBand, "bg-free text-free-foreground")}
+            >
+              {t.openCalendarApp}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
+        )}
       </div>
 
-      {subscriptionUrl && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
-          <div className="flex items-center justify-between gap-2 px-3 py-2 text-[13px] text-muted-foreground">
-            <span>{fill(t.classesSelected, { n: selected.length, max: MAX_CLASSES })}</span>
-            <button
-              type="button"
-              onClick={copyUrl}
-              className="min-h-8 rounded-lg border border-input bg-card px-2.5 font-semibold text-foreground"
-            >
-              {copied ? t.copied : t.copyFeedUrl}
-            </button>
-          </div>
-          <a
-            href={webcalUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => setSubscribed(true)}
-            className={cn(subscribeBand, "bg-free text-free-foreground")}
-          >
-            {t.openCalendarApp}
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </a>
-        </div>
-      )}
     </PageLayout>
   );
 }

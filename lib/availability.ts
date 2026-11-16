@@ -75,47 +75,66 @@ export interface RoomStatus {
   upcoming: RoomWindow | null;
   // The next window after `at`, whatever its distance (for "free at 13:30").
   next: RoomWindow | null;
-  // Minutes until the free stretch ends (free) or starts (soon).
+  // End of the usable stretch: windows that touch (free time running straight
+  // into a study session) count as one stretch. 0 when busy.
+  until: number;
+  // Minutes until the stretch ends (free) or starts (soon).
   minutes: number;
   // Whether the stretch that makes the room available lasts ≥ LONG_FREE_MINUTES.
   // For a free room that is the time left from `at`; for a room freeing up soon
-  // it is the length of the upcoming window.
+  // it is the whole upcoming stretch.
   longEnough: boolean;
 }
 
+/** End of the run of back-to-back windows starting with `first`. */
+const stretchEnd = (windows: RoomWindow[], first: RoomWindow): number => {
+  let end = first.end;
+  for (const window of windows) {
+    if (window.start > end) break;
+    if (window.end > end && window.start <= end && window.start >= first.start) end = window.end;
+  }
+  return end;
+};
+
 /** Where a room stands at minute `at` of the day. */
 export const roomStatusAt = (windows: RoomWindow[], at: number): RoomStatus => {
-  const current =
-    windows.find((window) => window.start <= at && at < window.end && window.end - at >= MIN_FREE_MINUTES) ?? null;
-  const next = windows.find((window) => window.start > at) ?? null;
+  const sorted = [...windows].sort((a, b) => a.start - b.start);
+  const next = sorted.find((window) => window.start > at) ?? null;
+  const current = sorted.find((window) => window.start <= at && at < window.end) ?? null;
   if (current) {
-    return {
-      state: "free",
-      current,
-      upcoming: null,
-      next,
-      minutes: current.end - at,
-      longEnough: current.end - at >= LONG_FREE_MINUTES,
-    };
+    const until = stretchEnd(sorted, current);
+    if (until - at >= MIN_FREE_MINUTES) {
+      return {
+        state: "free",
+        current,
+        upcoming: null,
+        next,
+        until,
+        minutes: until - at,
+        longEnough: until - at >= LONG_FREE_MINUTES,
+      };
+    }
   }
   const upcoming =
-    windows.find(
+    sorted.find(
       (window) =>
         window.start > at &&
         window.start - at <= FREE_SOON_MINUTES &&
-        window.end - window.start >= MIN_FREE_MINUTES
+        stretchEnd(sorted, window) - window.start >= MIN_FREE_MINUTES
     ) ?? null;
   if (upcoming) {
+    const until = stretchEnd(sorted, upcoming);
     return {
       state: "soon",
       current: null,
       upcoming,
       next,
+      until,
       minutes: upcoming.start - at,
-      longEnough: upcoming.end - upcoming.start >= LONG_FREE_MINUTES,
+      longEnough: until - upcoming.start >= LONG_FREE_MINUTES,
     };
   }
-  return { state: "busy", current: null, upcoming: null, next, minutes: 0, longEnough: false };
+  return { state: "busy", current: null, upcoming: null, next, until: 0, minutes: 0, longEnough: false };
 };
 
 /** Longest single window of the day, in minutes. */

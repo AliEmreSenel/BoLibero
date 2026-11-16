@@ -19,11 +19,64 @@ export interface BocconiEvent {
   roomRaw: string;
 }
 
+export interface ClassMeeting {
+  // 0 = Sunday … 6 = Saturday, as Date.getUTCDay().
+  day: number;
+  start: string;
+}
+
 export interface ClassOption {
   id: string;
   code: string;
   section: string;
   title: string;
+  // Who teaches it and when it usually meets, summarized from the catalog
+  // window. Optional: share links and saved bundles only carry the id fields.
+  teachers?: string[];
+  meetings?: ClassMeeting[];
+}
+
+const MAX_SUMMARY_TEACHERS = 3;
+const MAX_SUMMARY_MEETINGS = 4;
+
+/**
+ * Most frequent teachers and weekly meeting times of one class. Meetings are
+ * the (weekday, start) pairs seen most often in the window; when there is a
+ * weekly pattern, one-off make-up dates are left out. Ties keep the first seen.
+ */
+export function summarizeClass(
+  events: Array<Pick<BocconiEvent, "date" | "start" | "teachers">>
+): { teachers: string[]; meetings: ClassMeeting[] } {
+  const teacherCounts = new Map<string, number>();
+  const meetingCounts = new Map<string, { meeting: ClassMeeting; count: number }>();
+  for (const event of events) {
+    for (const teacher of event.teachers) {
+      teacherCounts.set(teacher, (teacherCounts.get(teacher) ?? 0) + 1);
+    }
+    const date = new Date(`${event.date}T12:00:00Z`);
+    if (Number.isNaN(date.getTime())) continue;
+    const meeting = { day: date.getUTCDay(), start: event.start };
+    const key = `${meeting.day}|${meeting.start}`;
+    const entry = meetingCounts.get(key);
+    if (entry) entry.count += 1;
+    else meetingCounts.set(key, { meeting, count: 1 });
+  }
+  const byCount = <T,>(entries: Array<[T, number]>) =>
+    entries.map((entry, index) => ({ entry, index }))
+      .sort((a, b) => b.entry[1] - a.entry[1] || a.index - b.index)
+      .map(({ entry }) => entry[0]);
+  const teachers = byCount([...teacherCounts.entries()]).slice(0, MAX_SUMMARY_TEACHERS);
+  // Monday-first weekday order for display.
+  const weekdayOrder = (day: number) => (day + 6) % 7;
+  // When the class has a weekly pattern, one-off (make-up) dates are dropped.
+  const recurring = [...meetingCounts.values()].some(({ count }) => count > 1);
+  const meetingEntries = [...meetingCounts.values()]
+    .filter(({ count }) => !recurring || count > 1)
+    .map(({ meeting, count }) => [meeting, count] as [ClassMeeting, number]);
+  const meetings = byCount(meetingEntries)
+    .slice(0, MAX_SUMMARY_MEETINGS)
+    .sort((a, b) => weekdayOrder(a.day) - weekdayOrder(b.day) || a.start.localeCompare(b.start));
+  return { teachers, meetings };
 }
 
 const BOCONNI_SCHEDULE_URL =

@@ -11,6 +11,7 @@ import { DetailHeader, headerActionClass, type BandTone } from "@/components/det
 import { MonthPicker } from "@/components/month-picker";
 import { RoomDayView } from "@/components/room-day";
 import { StudyIcon } from "@/components/availability";
+import { eventCourseTitle } from "@/components/class-item";
 import { fill, useTranslation } from "@/lib/i18n";
 import { FAVORITE_ROOMS_KEY, safeGetItem, safeSetItem, useLanguage } from "@/lib/settings";
 import { roomDayFromEvents } from "@/lib/room-day";
@@ -116,6 +117,14 @@ export default function RoomCalendar() {
     setIsFavorite(next.includes(favoriteKey));
   };
 
+  // Keep the selected day inside the visible month: today when it is the
+  // current month, else the 1st, so the day view never shows a day whose
+  // events were not loaded.
+  const moveMonth = (month: Date) => {
+    setCurrentMonth(month);
+    setSelectedDate(isSameMonth(month, new Date()) ? new Date() : startOfMonth(month));
+  };
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -154,7 +163,7 @@ export default function RoomCalendar() {
     if (!today.isOpen) return { tone: "busy" as BandTone, content: <strong>{t.buildingClosedToday}</strong> };
     const status = roomStatusAt(today.windows, now);
     if (status.state === "free" && status.current) {
-      const end = status.current.end;
+      const end = status.until;
       const nextClass = today.classes.find((event) => (normalizeTime(event.start) ?? "") >= formatMinutes(end));
       return {
         tone: "free" as BandTone,
@@ -166,7 +175,7 @@ export default function RoomCalendar() {
                 {end >= today.close ? t.freeUntilClosing : fill(t.freeUntil, { time: formatMinutes(end) })}
               </strong>{" "}
               · {fill(t.timeLeft, { d: formatDuration(status.minutes) })}
-              {nextClass?.class ? ` · ${fill(t.thenClass, { name: nextClass.class })}` : ""}
+              {nextClass ? ` · ${fill(t.thenClass, { name: eventCourseTitle(nextClass) })}` : ""}
             </span>
           </span>
         ),
@@ -178,7 +187,7 @@ export default function RoomCalendar() {
         content: (
           <span>
             <strong>{fill(t.freeIn, { n: status.minutes })}</strong> ·{" "}
-            {fill(t.untilTime, { time: formatMinutes(status.upcoming.end) })}
+            {fill(t.untilTime, { time: formatMinutes(status.until) })}
           </span>
         ),
       };
@@ -237,8 +246,8 @@ export default function RoomCalendar() {
               today={new Date()}
               daysWithEvents={daysWithEvents}
               onSelect={selectDate}
-              onPrev={() => setCurrentMonth((month) => subMonths(month, 1))}
-              onNext={() => setCurrentMonth((month) => addMonths(month, 1))}
+              onPrev={() => moveMonth(subMonths(currentMonth, 1))}
+              onNext={() => moveMonth(addMonths(currentMonth, 1))}
               onToday={() => {
                 const today = new Date();
                 selectDate(today);

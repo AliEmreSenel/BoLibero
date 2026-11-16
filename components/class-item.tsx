@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import type { ClientEvent } from "@/lib/event-matching";
+export { eventCourseTitle } from "@/lib/event-matching";
 import { getEventTypeLabel, type Language } from "@/lib/i18n";
 import { isLinkableRoomName } from "@/lib/constants";
 import { getBuildingDisplayName } from "@/lib/constants";
@@ -16,7 +17,7 @@ export function roomLabel(room: { building: string; roomName: string }): string 
   return building ? `${room.roomName}, ${building}` : room.roomName;
 }
 
-/** Title line, badges, class and people links of one scheduled event. */
+/** Title line, badges, section and people links of one scheduled event. */
 export function ClassDetails({
   event,
   language,
@@ -31,13 +32,19 @@ export function ClassDetails({
   badges?: ReactNode;
 }) {
   const typeLabel = event.type ? getEventTypeLabel(event.type, language) : "";
-  // Exams carry the course name in the description and leave the class empty.
-  const descriptionLines = event.description ? event.description.split("\n").filter(Boolean) : [];
-  const title = event.class || descriptionLines[0] || typeLabel;
-  const extraDescription = event.class ? descriptionLines : descriptionLines.slice(1);
+  const descriptionLines = event.description
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const title = descriptionLines[0] || event.class || typeLabel;
   const meta: ReactNode[] = [];
-  if (extraDescription.length > 0) {
-    meta.push(<span key="description">{extraDescription.join(" · ")}</span>);
+  // Section ("Cl.31") and the remaining description lines (programme, notes).
+  const details = [
+    descriptionLines[0] ? event.class : "",
+    ...descriptionLines.slice(1),
+  ].filter(Boolean);
+  if (details.length > 0) {
+    meta.push(<span key="details">{details.join(" · ")}</span>);
   }
   if (showTeachers) {
     event.teachers.forEach((teacher) =>

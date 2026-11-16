@@ -573,6 +573,7 @@ const EVENT_TYPE_LABELS: Record<Language, Record<string, string>> = {
   en: {
     lezione: "Lesson",
     esame: "Exam",
+    attivita: "Activity",
     seminario: "Seminar",
     studio: "Study room",
     "aula studio": "Study room",
@@ -581,6 +582,7 @@ const EVENT_TYPE_LABELS: Record<Language, Record<string, string>> = {
   it: {
     lezione: "Lezione",
     esame: "Esame",
+    attivita: "Attività",
     seminario: "Seminario",
     studio: "Aula studio",
     "aula studio": "Aula studio",
@@ -588,9 +590,17 @@ const EVENT_TYPE_LABELS: Record<Language, Record<string, string>> = {
   },
 };
 
+// Upstream types look like "Lezione", "Attivita'" or "Esame (S)": match on the
+// base word (no trailing apostrophe or parenthetical) and keep the suffix.
 export function getEventTypeLabel(type: string, language: Language): string {
-  const key = type.trim().toLowerCase();
-  return EVENT_TYPE_LABELS[language][key] ?? type;
+  const trimmed = type.trim();
+  const labels = EVENT_TYPE_LABELS[language];
+  const exact = labels[trimmed.toLowerCase()];
+  if (exact) return exact;
+  const match = trimmed.match(/^(.*?)(\s*\(.*\))?$/);
+  const base = (match?.[1] ?? trimmed).replace(/['’]+$/, "").toLowerCase();
+  const label = labels[base];
+  return label ? `${label}${match?.[2] ?? ""}` : trimmed;
 }
 
 export function useTranslation(language: Language) {

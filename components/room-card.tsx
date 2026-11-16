@@ -39,35 +39,34 @@ function Band({
   status,
   windows,
   isOpen,
-  openTime,
   closedMessage,
   close,
   studyOnly,
   t,
-}: Pick<RoomCardProps, "status" | "windows" | "isOpen" | "openTime" | "closedMessage" | "close" | "studyOnly" | "t">) {
+}: Pick<RoomCardProps, "status" | "windows" | "isOpen" | "closedMessage" | "close" | "studyOnly" | "t">) {
   let tone = "bg-busy text-busy-foreground";
   let title = "";
   let detail = "";
   let study = false;
 
   if (!isOpen) {
+    // Closed for the whole day: an opening time would be misleading.
     title = closedMessage;
-    detail = `· ${t.closedOpensAt} ${openTime}`;
   } else if (!status) {
     title = fill(t.freeSlotsCount, { n: windows.length });
   } else if (status.state === "free" && status.current) {
     tone = "bg-free text-free-foreground";
     study = status.current.kind === "study";
     title =
-      status.current.end >= close
+      status.until >= close
         ? t.freeUntilClosing
-        : fill(t.freeUntil, { time: formatMinutes(status.current.end) });
+        : fill(t.freeUntil, { time: formatMinutes(status.until) });
     detail = `· ${fill(t.timeLeft, { d: formatDuration(status.minutes) })}`;
   } else if (status.state === "soon" && status.upcoming) {
     tone = "bg-soon text-soon-foreground";
     study = status.upcoming.kind === "study";
     title = fill(t.freeIn, { n: status.minutes });
-    detail = `· ${fill(t.untilTime, { time: formatMinutes(status.upcoming.end) })}`;
+    detail = `· ${fill(t.untilTime, { time: formatMinutes(status.until) })}`;
   } else {
     title = studyOnly ? t.noStudySessionNow : t.occupied;
     if (status.next) {

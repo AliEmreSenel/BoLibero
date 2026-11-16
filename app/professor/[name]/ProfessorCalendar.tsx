@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { startOfMonth, endOfMonth, addMonths, subMonths, format, parseISO } from "date-fns";
+import { startOfMonth, endOfMonth, addMonths, subMonths, format, parseISO, isSameMonth } from "date-fns";
 import { it, enUS } from "date-fns/locale";
 import { useParams } from "next/navigation";
 import { ArrowRight, Link2, Loader2, RefreshCw } from "lucide-react";
@@ -10,7 +10,7 @@ import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
 import { DetailHeader, headerActionClass } from "@/components/detail-header";
 import { MonthPicker } from "@/components/month-picker";
-import { ClassDetails, TimeCell, roomHref, roomLabel } from "@/components/class-item";
+import { ClassDetails, TimeCell, eventCourseTitle, roomHref, roomLabel } from "@/components/class-item";
 import { fill, formatDateFull, useTranslation } from "@/lib/i18n";
 import { useLanguage } from "@/lib/settings";
 import { isFreeTimeEvent, isLinkableRoomName, resolveRoom } from "@/lib/constants";
@@ -142,7 +142,7 @@ export default function ProfessorCalendar() {
   const daysWithEvents = useMemo(() => new Set(profEvents.map((event) => event.date)), [profEvents]);
 
   const subjects = useMemo(() => {
-    const names = [...new Set(profEvents.map((event) => event.class).filter(Boolean))];
+    const names = [...new Set(profEvents.map((event) => eventCourseTitle(event)).filter(Boolean))];
     return names.length > 2 ? `${names.slice(0, 2).join(", ")}…` : names.join(", ");
   }, [profEvents]);
 
@@ -170,7 +170,7 @@ export default function ProfessorCalendar() {
       content: (
         <span>
           <strong>
-            {t.nextClassLabel}: {nextClass.class}, {dayLabel} {normalizeTime(nextClass.start) ?? nextClass.start}
+            {t.nextClassLabel}: {eventCourseTitle(nextClass)}, {dayLabel} {normalizeTime(nextClass.start) ?? nextClass.start}
           </strong>{" "}
           · {parts.filter(Boolean).join(" · ")}
         </span>
@@ -183,6 +183,14 @@ export default function ProfessorCalendar() {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
       requestAnimationFrame(() => dayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     }
+  };
+
+  // Keep the selected day inside the visible month: today when it is the
+  // current month, else the 1st, so the day view never shows a day whose
+  // events were not loaded.
+  const moveMonth = (month: Date) => {
+    setCurrentMonth(month);
+    setSelectedDate(isSameMonth(month, new Date()) ? new Date() : startOfMonth(month));
   };
 
   const copyLink = async () => {
@@ -236,8 +244,8 @@ export default function ProfessorCalendar() {
               today={new Date()}
               daysWithEvents={daysWithEvents}
               onSelect={selectDate}
-              onPrev={() => setCurrentMonth((month) => subMonths(month, 1))}
-              onNext={() => setCurrentMonth((month) => addMonths(month, 1))}
+              onPrev={() => moveMonth(subMonths(currentMonth, 1))}
+              onNext={() => moveMonth(addMonths(currentMonth, 1))}
               onToday={() => {
                 const today = new Date();
                 selectDate(today);
@@ -298,7 +306,7 @@ export default function ProfessorCalendar() {
                             <span>
                               <strong>{roomLabel(room)}</strong>
                               {freeNow && status?.current
-                                ? ` · ${fill(t.roomFreeNowUntil, { time: formatMinutes(status.current.end) })}`
+                                ? ` · ${fill(t.roomFreeNowUntil, { time: formatMinutes(status.until) })}`
                                 : ""}
                             </span>
                             {isLinkableRoomName(room.roomName) && (
