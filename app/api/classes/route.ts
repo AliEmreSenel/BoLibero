@@ -7,6 +7,8 @@ import {
   makeClassId,
   SUBSCRIPTION_REVALIDATE_SECONDS,
   SUBSCRIPTION_STALE_SECONDS,
+  summarizeClass,
+  type BocconiEvent,
   type ClassOption,
 } from "@/lib/bocconi-calendar";
 
@@ -52,6 +54,7 @@ export async function GET() {
       (result) => (result.status === "fulfilled" ? result.value : [])
     );
     const classes = new Map<string, ClassOption>();
+    const eventsByClass = new Map<string, BocconiEvent[]>();
 
     for (const event of events) {
       if (!event.code || !event.className) continue;
@@ -63,7 +66,13 @@ export async function GET() {
           section: event.className,
           title: eventTitle(event),
         });
+        eventsByClass.set(id, []);
       }
+      eventsByClass.get(id)!.push(event);
+    }
+
+    for (const [id, option] of classes) {
+      Object.assign(option, summarizeClass(eventsByClass.get(id) ?? []));
     }
 
     const result = Array.from(classes.values()).sort(

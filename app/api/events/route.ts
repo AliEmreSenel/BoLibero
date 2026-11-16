@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
   fetchBocconiEvents,
-  makeClassId,
+  eventMatchesClass,
   parseClassId,
 } from "@/lib/bocconi-calendar";
 import { BUILDING_CONFIG } from "@/lib/constants";
@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
     return badRequest("room must be a tracked room of the given building");
   }
 
+  const selectedClass = classId ? parseClassId(classId) : null;
+
   try {
     const events = await fetchBocconiEvents({
       startDate: new Date(`${from}T00:00:00Z`),
@@ -86,11 +88,8 @@ export async function GET(request: NextRequest) {
       if (!inRange) return false;
       if (day) return true;
       if (room) return exactRoomMatch(room, event.rooms) && !isFreeTimeEvent(event);
-      if (classId) {
-        return (
-          !isFreeTimeEvent(event) &&
-          makeClassId(event.code, event.className) === classId
-        );
+      if (selectedClass) {
+        return !isFreeTimeEvent(event) && eventMatchesClass(event, selectedClass);
       }
       return exactProfMatch(prof, event.teachers);
     });

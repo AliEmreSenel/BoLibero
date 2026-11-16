@@ -1,9 +1,10 @@
 "use client";
-import { BookOpen, CalendarPlus, CalendarDays } from "lucide-react";
+import { Building2, CalendarPlus, CalendarDays } from "lucide-react";
 import { SettingsMenu } from "@/components/settings-menu";
 import { type Language, useTranslation } from "@/lib/i18n";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   language: Language;
@@ -14,47 +15,57 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
   const t = useTranslation(language);
   const pathname = usePathname();
 
+  const links = [
+    {
+      href: "/",
+      label: t.roomsNav,
+      icon: Building2,
+      active: pathname === "/" || pathname.startsWith("/room/"),
+    },
+    {
+      href: "/calendar",
+      label: t.classCalendarNav,
+      icon: CalendarPlus,
+      active: pathname === "/calendar",
+    },
+    {
+      href: "/schedule",
+      label: t.mySchedule,
+      icon: CalendarDays,
+      active: pathname === "/schedule",
+    },
+  ];
+
   return (
-    <header className="border-b pt-[env(safe-area-inset-top)]">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between gap-3">
-          <Link
-            href="/"
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <BookOpen className="h-8 w-8" />
-            <h1 className="text-lg font-bold sm:text-2xl">{t.appName}</h1>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <nav aria-label={t.navigation} className="flex items-center">
-              <Link
-                href="/calendar"
-                aria-current={pathname === "/calendar" ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  pathname === "/calendar"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <CalendarPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">{t.classCalendarNav}</span>
-              </Link>
-              <Link
-                href="/schedule"
-                aria-current={pathname === "/schedule" ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                  pathname === "/schedule"
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <CalendarDays className="h-4 w-4" />
-                <span className="hidden sm:inline">{t.mySchedule}</span>
-              </Link>
-            </nav>
-            <SettingsMenu language={language} onLanguageChange={onLanguageChange} />
-          </div>
-        </div>
+    <header className="border-b bg-card pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex min-h-14 w-full max-w-[1240px] items-center gap-2 px-4 sm:min-h-[60px] sm:gap-6 sm:px-6">
+        <Link href="/" className="flex items-center gap-2 text-lg font-extrabold">
+          <span
+            aria-hidden="true"
+            className="h-3 w-3 rounded-full bg-free-bar ring-4 ring-free-soft"
+          />
+          {t.appName}
+        </Link>
+        <nav aria-label={t.navigation} className="ml-auto flex items-center sm:ml-0 sm:flex-1 sm:gap-1">
+          {links.map(({ href, label, icon: Icon, active }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              aria-label={label}
+              className={cn(
+                "inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-2 text-sm transition-colors sm:h-10 sm:rounded-none sm:px-3",
+                active
+                  ? "bg-free-soft text-free-soft-foreground sm:bg-transparent sm:font-bold sm:text-foreground sm:shadow-[inset_0_-2px_0_var(--free-bar)]"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-5 w-5 sm:hidden" aria-hidden="true" />
+              <span className="hidden sm:inline">{label}</span>
+            </Link>
+          ))}
+        </nav>
+        <SettingsMenu language={language} onLanguageChange={onLanguageChange} />
       </div>
     </header>
   );

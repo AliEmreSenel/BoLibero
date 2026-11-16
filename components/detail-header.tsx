@@ -1,80 +1,91 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
-import { it, enUS } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import type { Language, Translations } from "@/lib/i18n";
+import { ArrowRight, ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type BandTone = "free" | "soon" | "busy" | "ink";
+
+const toneClass: Record<BandTone, string> = {
+  free: "bg-free text-free-foreground",
+  soon: "bg-soon text-soon-foreground",
+  busy: "bg-busy text-busy-foreground",
+  ink: "bg-ink text-ink-foreground",
+};
+
+const borderClass: Record<BandTone, string> = {
+  free: "border-free-border",
+  soon: "border-soon-border",
+  busy: "border-border",
+  ink: "border-border",
+};
 
 interface DetailHeaderProps {
+  backHref: string;
+  backLabel: string;
   title: string;
-  subtitle?: string;
-  description?: string;
-  eventCount: number;
-  lastUpdated: Date | null;
-  loading: boolean;
-  language: Language;
-  t: Translations;
-  onRefresh: () => void;
+  subtitle?: ReactNode;
+  avatar?: string;
+  actions?: ReactNode;
+  band?: { tone: BandTone; content: ReactNode; href?: string } | null;
 }
 
+/** Back link plus the title card with an optional status band underneath. */
 export function DetailHeader({
+  backHref,
+  backLabel,
   title,
   subtitle,
-  description,
-  eventCount,
-  lastUpdated,
-  loading,
-  language,
-  t,
-  onRefresh,
+  avatar,
+  actions,
+  band,
 }: DetailHeaderProps) {
-  const locale = language === "it" ? it : enUS;
-
+  const bandBody = band && (
+    <span className={cn("flex min-h-[46px] items-center justify-between gap-3 px-4 text-sm sm:px-[18px]", toneClass[band.tone])}>
+      <span>{band.content}</span>
+      {band.href && <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />}
+    </span>
+  );
   return (
-    <>
-      {/* Back Button */}
-      <div className="mb-6 flex items-center justify-between">
-        <Button asChild variant="outline">
-          <Link href="/">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t.backToOverview}
-          </Link>
-        </Button>
-        <Button
-          onClick={onRefresh}
-          variant="outline"
-          size="sm"
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-          {t.refresh}
-        </Button>
-      </div>
-
-      {/* Page Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold mb-2">{title}</h1>
-        {subtitle && (
-          <p className="text-muted-foreground text-lg">{subtitle}</p>
-        )}
-        {description && (
-          <p className="text-muted-foreground text-sm mt-2">{description}</p>
-        )}
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <Badge variant="outline" className="text-sm">
-            {eventCount}{" "}
-            {eventCount === 1 ? t.eventThisMonth : t.eventsThisMonth}
-          </Badge>
-          {lastUpdated && (
-            <div className="text-sm text-muted-foreground">
-              {t.updated}: {format(lastUpdated, "HH:mm", { locale })}
+    <div className="mb-4 flex flex-col gap-4">
+      <Link
+        href={backHref}
+        className="inline-flex min-h-8 items-center gap-1.5 self-start font-semibold text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        {backLabel}
+      </Link>
+      <section className={cn("overflow-hidden rounded-2xl border bg-card", borderClass[band?.tone ?? "busy"])}>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4 sm:px-[18px]">
+          <div className="flex min-w-0 items-center gap-3.5">
+            {avatar && (
+              <span
+                aria-hidden="true"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-free-soft text-[17px] font-extrabold text-free-soft-foreground"
+              >
+                {avatar}
+              </span>
+            )}
+            <div className="min-w-0">
+              <h1 className="break-words text-2xl font-extrabold tracking-tight sm:text-[26px]">{title}</h1>
+              {subtitle && <div className="text-muted-foreground">{subtitle}</div>}
             </div>
-          )}
+          </div>
+          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
         </div>
-      </div>
-    </>
+        {band &&
+          (band.href ? (
+            <Link href={band.href} className="block">
+              {bandBody}
+            </Link>
+          ) : (
+            bandBody
+          ))}
+      </section>
+    </div>
   );
 }
+
+export const headerActionClass =
+  "inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border border-input bg-card px-3 text-sm font-semibold hover:bg-muted disabled:opacity-50";

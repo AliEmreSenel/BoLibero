@@ -44,3 +44,18 @@ export const toClientEvent = (event: BocconiEvent): ClientEvent => ({
   room_raw: event.roomRaw,
   isStudyRoom: isStudyRoomEvent(event),
 });
+
+/**
+ * Course name of an event. Upstream puts the course name on the first line
+ * of the description ("MANAGEMENT CONSULTING\nIMB"); `class` is only the
+ * section ("Cl.31") and is empty for exams and activities.
+ */
+export function eventCourseTitle(
+  event: Pick<ClientEvent, "description" | "class" | "type">
+): string {
+  const first = event.description
+    .split("\n")
+    .map((line) => line.trim())
+    .find(Boolean);
+  return first || event.class || event.type;
+}

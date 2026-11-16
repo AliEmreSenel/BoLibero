@@ -32,8 +32,12 @@ export function SettingsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-9 w-9 min-h-11 p-0">
-          <Settings className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-11 w-11 shrink-0 p-0 sm:h-10 sm:w-10 sm:border sm:border-border sm:bg-card"
+        >
+          <Settings className="h-[18px] w-[18px]" />
           <span className="sr-only">{t.settings}</span>
         </Button>
       </DropdownMenuTrigger>

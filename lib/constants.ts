@@ -185,6 +185,7 @@ export const BUILDING_CONFIG: Record<
       "Aula N06",
       "Aula N07",
       "Aula N08",
+      "Aula N09",
       "Aula N10",
       "Aula N11",
       "Aula N12",
