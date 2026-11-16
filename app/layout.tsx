@@ -1,12 +1,12 @@
 import type React from "react";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { SITE_TITLE, SITE_URL } from "@/lib/site";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
     width: "device-width",
@@ -61,7 +61,7 @@ export default function RootLayout({
                   }}
                 />
             </head>
-            <body className={inter.className}>
+            <body className={dmSans.className}>
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="system"

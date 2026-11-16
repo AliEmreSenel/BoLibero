@@ -5,7 +5,7 @@ import {
 
 export default function ProfessorLoading() {
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6">
       <DetailHeaderSkeleton />
       <CalendarViewSkeleton />
     </div>

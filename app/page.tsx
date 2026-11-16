@@ -14,7 +14,7 @@ import {
   SearchFiltersSkeleton,
   RoomGridSkeleton,
 } from "@/components/skeletons";
-import { useTranslation } from "@/lib/i18n";
+import { fill, useTranslation } from "@/lib/i18n";
 import {
   FAVORITE_ROOMS_KEY,
   loadSettings,
@@ -30,6 +30,16 @@ import {
 } from "@/lib/building-hours";
 import { getBuildingDisplayName, getVisibleBuildings } from "@/lib/constants";
 import { romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
+import {
+  LONG_FREE_MINUTES,
+  buildWindows,
+  formatMinutes,
+  longestWindow,
+  roomStatusAt,
+  studyWindowsOnly,
+  type RoomStatus,
+  type RoomWindow,
+} from "@/lib/availability";
 
 interface TimeSlot {
   start: string;
@@ -38,9 +48,9 @@ interface TimeSlot {
 
 const MAX_RANGE_DAYS = 90;
 
-// "Available now" must be usable: a room counts as free only while it stays
-// free for at least this many more minutes.
-const MIN_FREE_NOW_MINUTES = 15;
+// Range of the "show rooms free at" slider, in minutes since midnight.
+const SCRUB_MIN = 8 * 60;
+const SCRUB_MAX = 21 * 60;
 
 const getTodayDateValue = () => romeDateKey();
 
@@ -63,9 +73,30 @@ const parseDateValue = (dateValue: string): Date => {
   return new Date(year, month - 1, day);
 };
 
+const shiftDateValue = (dateValue: string, days: number): string => {
+  const date = new Date(`${dateValue}T12:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+interface RoomView {
+  building: string;
+  room: string;
+  key: string;
+  // Free slots as stored (merged, for the start/end time range filter).
+  rangeSlots: TimeSlot[];
+  windows: RoomWindow[];
+  hasStudySession: boolean;
+  isFreeAllDay: boolean;
+  isOpen: boolean;
+  open: number;
+  close: number;
+  openTime: string;
+  status: RoomStatus | null;
+}
+
 export default function BSpace() {
   const [scheduleData, setScheduleData] = useState<ScheduleData>({});
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(getTodayDateValue);
@@ -80,6 +111,10 @@ export default function BSpace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  // The time the grid shows availability for. null = "now" today, and "no
+  // time chosen" on other days.
+  const [scrubTime, setScrubTime] = useState<number | null>(null);
+  const [scrubOpen, setScrubOpen] = useState(false);
   const [error, setError] = useState(false);
   const [language, setLanguage] = useLanguage();
   // Status badges are present-tense; re-render once a minute so "now" stays true.
@@ -93,21 +128,27 @@ export default function BSpace() {
   const isSelectedDateToday = selectedDate === todayDateValue;
   const isFutureDate = selectedDate > todayDateValue;
   const isPastDate = selectedDate < todayDateValue;
-  // Present-tense availability only describes today; on other dates the button
-  // stays visible-disabled with an explanation.
   const showAvailabilityFilter = !isPastDate;
-  const availabilityActive = showOnlyAvailable && isSelectedDateToday;
-  const availabilityFilterLabel = t.availableNow;
-  const availabilityStatusLabel = isSelectedDateToday
-    ? t.availableNow
-    : t.availableAtThisTime;
-  const occupiedLabel = isSelectedDateToday
-    ? t.occupiedNow
-    : t.occupiedAtThisTime;
+  // nowTick forces a fresh reading once a minute.
+  const nowMinutes = useMemo(() => {
+    void nowTick;
+    return romeMinutes();
+  }, [nowTick]);
+  const atTime: number | null = isPastDate
+    ? null
+    : isSelectedDateToday
+      ? (scrubTime ?? nowMinutes)
+      : scrubTime;
+  const isLiveNow = isSelectedDateToday && scrubTime === null;
+  const availabilityActive = showOnlyAvailable && atTime !== null;
+  const availabilityFilterLabel =
+    atTime === null || isLiveNow
+      ? t.availableNow
+      : fill(t.availableAt, { time: formatMinutes(atTime) });
   const buildingClosedMessage = isSelectedDateToday
     ? t.buildingClosedToday
     : t.buildingClosedOnSelectedDate;
-  const noAvailabilityMessage = isSelectedDateToday
+  const noAvailabilityMessage = isLiveNow
     ? t.noAvailableRooms
     : t.noRoomsAvailableAtThisTime;
   const selectedDateObj = useMemo(
@@ -159,7 +200,6 @@ export default function BSpace() {
         const data = await fetcher.fetchScheduleForDate(selectedDateObj);
         if (!cancelled) {
           setScheduleData(data);
-          setLastUpdated(new Date());
           hasLoadedOnceRef.current = true;
         }
       } catch (error) {
@@ -184,104 +224,70 @@ export default function BSpace() {
     };
   }, [selectedDateObj, reloadKey]);
 
-  // Free and study slots per room, computed once per selected date (and per
-  // schedule fetch / study-room refresh) and shared by the availability
-  // filters and the cards, instead of recomputing per keystroke per consumer.
-  const roomSlots = useMemo(() => {
+  // Day structure per room (free/study windows, opening hours), computed once
+  // per selected date and schedule fetch; the time-dependent status is cheap
+  // and derived below.
+  const roomDays = useMemo(() => {
     void slotsVersion;
-    const slots = new Map<
-      string,
-      { freeSlots: TimeSlot[]; studySlots: TimeSlot[] }
-    >();
-    for (const [building, rooms] of Object.entries(scheduleData)) {
-      for (const room of Object.keys(rooms)) {
-        slots.set(`${building}/${room}`, {
-          freeSlots: fetcher.getFreeTimeSlots(building, room, selectedDateObj),
-          studySlots: fetcher.getStudyRoomTimeSlots(
-            building,
-            room,
-            selectedDateObj
-          ),
+    const rooms: Omit<RoomView, "status">[] = [];
+    for (const [building, buildingRooms] of Object.entries(scheduleData)) {
+      const isOpen = isBuildingOpen(building, selectedDateObj);
+      const openTime = getBuildingOpeningTime(building, selectedDateObj);
+      const open = toMinutes(openTime);
+      const close = toMinutes(getBuildingClosingTime(building, selectedDateObj));
+      for (const room of Object.keys(buildingRooms)) {
+        const freeSlots = fetcher.getFreeTimeSlots(building, room, selectedDateObj);
+        const studySlots = fetcher.getStudyRoomTimeSlots(building, room, selectedDateObj);
+        const all = buildWindows(freeSlots, studySlots);
+        const windows = showOnlyStudyRooms ? studyWindowsOnly(all) : all;
+        const hasStudySession = all.some((window) => window.kind === "study");
+        // A room free for the whole opening window is far more likely an
+        // unbooked, locked room than a lucky find, so the card warns.
+        // Rooms with an official study session are open on purpose.
+        const isFreeAllDay =
+          isOpen &&
+          !hasStudySession &&
+          all.length === 1 &&
+          all[0].start <= open &&
+          all[0].end >= close;
+        rooms.push({
+          building,
+          room,
+          key: `${building}/${room}`,
+          rangeSlots: showOnlyStudyRooms ? studySlots : freeSlots,
+          windows,
+          hasStudySession,
+          isFreeAllDay,
+          isOpen,
+          open,
+          close,
+          openTime,
         });
       }
     }
-    return slots;
-  }, [scheduleData, selectedDateObj, slotsVersion]);
+    return rooms;
+  }, [scheduleData, selectedDateObj, slotsVersion, showOnlyStudyRooms]);
 
-  /**
-   * Get time slots for a room - if showOnlyStudyRooms is enabled,
-   * returns only the official study room time slots
-   */
-  const getDisplayTimeSlots = (building: string, room: string): TimeSlot[] => {
-    const slots = roomSlots.get(`${building}/${room}`);
-    if (!slots) return [];
-    return showOnlyStudyRooms ? slots.studySlots : slots.freeSlots;
-  };
-
-  // A room free for the whole opening window is far more likely an unbooked,
-  // locked room than a lucky find, so the card warns. Official study rooms
-  // are open all day on purpose, so they are exempt.
-  const isRoomFreeAllDay = (building: string, room: string): boolean => {
-    if (!isBuildingOpen(building, selectedDateObj)) return false;
-    if (fetcher.isStudyRoom(building, room)) return false;
-    const opening = getBuildingOpeningTime(building, selectedDateObj);
-    const closing = getBuildingClosingTime(building, selectedDateObj);
-    return (
-      roomSlots
-        .get(`${building}/${room}`)
-        ?.freeSlots.some(
-          (slot) => slot.start <= opening && slot.end >= closing
-        ) ?? false
-    );
-  };
-
-  const isRoomCurrentlyFree = (building: string, room: string) => {
-    // Check if building is open on selected date
-    if (!isBuildingOpen(building, selectedDateObj)) {
-      return false;
-    }
-
-    const currentMinutes = romeMinutes();
-
-    const todayFree = getDisplayTimeSlots(building, room);
-
-    return todayFree.some((event) => {
-      const startMinutes = toMinutes(event.start);
-      const endMinutes = toMinutes(event.end);
-
-      return (
-        currentMinutes >= startMinutes &&
-        currentMinutes + MIN_FREE_NOW_MINUTES <= endMinutes
-      );
-    });
-  };
+  const rooms: RoomView[] = useMemo(
+    () =>
+      roomDays.map((day) => ({
+        ...day,
+        status: atTime !== null && day.isOpen ? roomStatusAt(day.windows, atTime) : null,
+      })),
+    [roomDays, atTime]
+  );
 
   // Filter rooms based on time range
-  const isRoomAvailableInTimeRange = (
-    building: string,
-    room: string
-  ): boolean => {
-    if (!startTime && !endTime) return true;
-
-    const freeSlots = getDisplayTimeSlots(building, room);
-    const searchStart = startTime;
-    const searchEnd = endTime;
-
-    return freeSlots.some((slot) => {
-      return (
-        (!searchStart ||
-          (slot.start <= searchStart && slot.end >= searchStart)) &&
-        (!searchEnd || (slot.start <= searchEnd && slot.end >= searchEnd))
+  const isRoomAvailableInTimeRange = useCallback(
+    (slots: TimeSlot[]): boolean => {
+      if (!startTime && !endTime) return true;
+      return slots.some(
+        (slot) =>
+          (!startTime || (slot.start <= startTime && slot.end >= startTime)) &&
+          (!endTime || (slot.start <= endTime && slot.end >= endTime))
       );
-    });
-  };
-
-  const allRooms = useMemo(
-    () =>
-      Object.entries(scheduleData).flatMap(([building, rooms]) =>
-        Object.keys(rooms).map((room) => ({ building, room }))
-      ),
-    [scheduleData]
+    },
+    [startTime, endTime]
   );
 
   const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
@@ -298,31 +304,30 @@ export default function BSpace() {
   }, []);
 
   const filteredRooms = useMemo(() => {
-    const filtered = allRooms.filter(({ building, room }) => {
+    const query = searchQuery.toLowerCase();
+    const filtered = rooms.filter((view) => {
+      const { building, room, status } = view;
       const buildingMatch =
         selectedBuilding === "all" || building === selectedBuilding;
       const searchMatch =
-        !searchQuery ||
-        room.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        building.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        !query ||
+        room.toLowerCase().includes(query) ||
+        building.toLowerCase().includes(query) ||
         // Students search "Leoni"/"Velodromo", not the internal building keys.
-        getBuildingDisplayName(building)
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+        getBuildingDisplayName(building).toLowerCase().includes(query);
+      // "Available" includes rooms whose class ends within 15 minutes.
       const availabilityMatch =
-        !availabilityActive || isRoomCurrentlyFree(building, room);
-      const timeRangeMatch = isRoomAvailableInTimeRange(building, room);
-      const favoriteMatch =
-        !showOnlyFavorites || favoriteSet.has(`${building}/${room}`);
+        !availabilityActive || (status !== null && status.state !== "busy");
+      const timeRangeMatch = isRoomAvailableInTimeRange(view.rangeSlots);
+      const favoriteMatch = !showOnlyFavorites || favoriteSet.has(view.key);
+      // With "Available" on, ≥ 2h refers to the stretch that makes the room
+      // available; otherwise to any window of the day.
       const free2hMatch =
         !showOnly2h ||
-        getDisplayTimeSlots(building, room).some(
-          (slot) => toMinutes(slot.end) - toMinutes(slot.start) >= 120
-        );
-      // Filter by time slots - only show rooms that have study room time slots when enabled
-      const studyRoomMatch =
-        !showOnlyStudyRooms ||
-        (roomSlots.get(`${building}/${room}`)?.studySlots.length ?? 0) > 0;
+        (availabilityActive
+          ? status?.longEnough === true
+          : longestWindow(view.windows) >= LONG_FREE_MINUTES);
+      const studyRoomMatch = !showOnlyStudyRooms || view.windows.length > 0;
 
       return (
         buildingMatch &&
@@ -334,18 +339,25 @@ export default function BSpace() {
         studyRoomMatch
       );
     });
-    // Favorites always sort to the top of the grid.
-    return [
-      ...filtered.filter(({ building, room }) =>
-        favoriteSet.has(`${building}/${room}`)
-      ),
-      ...filtered.filter(
-        ({ building, room }) => !favoriteSet.has(`${building}/${room}`)
-      ),
-    ];
+    // Favorites first; then free rooms (longest stretch first), then rooms
+    // freeing up soon (soonest first), then the rest in their natural order.
+    const rank = (view: RoomView) =>
+      view.status?.state === "free" ? 0 : view.status?.state === "soon" ? 1 : 2;
+    return filtered
+      .map((view, index) => ({ view, index }))
+      .sort((a, b) => {
+        const favorite =
+          Number(favoriteSet.has(b.view.key)) - Number(favoriteSet.has(a.view.key));
+        if (favorite) return favorite;
+        const byRank = rank(a.view) - rank(b.view);
+        if (byRank) return byRank;
+        if (rank(a.view) === 0) return (b.view.status?.minutes ?? 0) - (a.view.status?.minutes ?? 0);
+        if (rank(a.view) === 1) return (a.view.status?.minutes ?? 0) - (b.view.status?.minutes ?? 0);
+        return a.index - b.index;
+      })
+      .map(({ view }) => view);
   }, [
-    allRooms,
-    roomSlots,
+    rooms,
     selectedBuilding,
     searchQuery,
     availabilityActive,
@@ -353,16 +365,18 @@ export default function BSpace() {
     showOnlyFavorites,
     showOnly2h,
     favoriteSet,
-    startTime,
-    endTime,
-    selectedDate,
-    scheduleData,
-    nowTick,
+    isRoomAvailableInTimeRange,
   ]);
 
   const displayedFilteredCount = isRefreshing
     ? "—"
     : String(filteredRooms.length);
+  const freeCount = filteredRooms.filter((view) => view.status?.state === "free").length;
+  const soonCount = filteredRooms.filter((view) => view.status?.state === "soon").length;
+  const countDetail =
+    availabilityActive && !isRefreshing
+      ? fill(t.freeSoonCount, { free: freeCount, soon: soonCount })
+      : "";
 
   // A scrape that returns zero events campus-wide means "no data", not "all
   // rooms free". Rendering the full grid in that case shows every room with a
@@ -390,12 +404,13 @@ export default function BSpace() {
     searchQuery !== "" ||
     selectedDate !== todayDateValue ||
     selectedBuilding !== "all" ||
-    availabilityActive ||
+    !showOnlyAvailable ||
     showOnlyStudyRooms ||
     showOnlyFavorites ||
     showOnly2h ||
     startTime !== "" ||
-    endTime !== "";
+    endTime !== "" ||
+    scrubTime !== null;
 
   const handleReset = () => {
     setSearchQuery("");
@@ -407,14 +422,34 @@ export default function BSpace() {
     setShowOnlyStudyRooms(false);
     setShowOnlyFavorites(false);
     setShowOnly2h(false);
+    setScrubTime(null);
+    setScrubOpen(false);
     const currentSettings = loadSettings();
     saveSettings({ ...currentSettings, showOnlyStudyRooms: false });
   };
 
+  const changeDate = (value: string) => {
+    if (value < todayDateValue || value > MAX_DATE_VALUE) return;
+    setSelectedDate(value);
+  };
+
+  const scrubButtonLabel = isLiveNow
+    ? t.nowLabel
+    : atTime !== null
+      ? formatMinutes(atTime)
+      : t.pickTime;
+  const scrubHeading = fill(t.showRoomsFreeAt, {
+    time: isLiveNow
+      ? fill(t.nowWithTime, { time: formatMinutes(nowMinutes) })
+      : formatMinutes(atTime ?? SCRUB_MIN),
+  });
+
+  const container = "mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6";
+
   if (isInitialLoading) {
     return (
       <PageLayout language={language} onLanguageChange={setLanguage}>
-        <div className="container mx-auto p-6 max-w-7xl">
+        <div className={container}>
           <PageHeaderSkeleton />
           <SearchFiltersSkeleton />
           <RoomGridSkeleton count={9} />
@@ -425,26 +460,44 @@ export default function BSpace() {
 
   return (
     <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className="container mx-auto p-6 max-w-7xl">
-        {/* Page Header */}
-        <PageHeader language={language} selectedDate={selectedDateObj} t={t} />
+      <div className={container}>
+        <PageHeader
+          language={language}
+          selectedDate={selectedDateObj}
+          dateValue={selectedDate}
+          minDate={todayDateValue}
+          maxDate={MAX_DATE_VALUE}
+          isToday={isSelectedDateToday}
+          onDateChange={changeDate}
+          onShiftDay={(days) => changeDate(shiftDateValue(selectedDate, days))}
+          t={t}
+        />
 
-        {/* Search and Filters */}
         <SearchFilters
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
           startTime={startTime}
           setStartTime={setStartTime}
           endTime={endTime}
           setEndTime={setEndTime}
           selectedBuilding={selectedBuilding}
           setSelectedBuilding={setSelectedBuilding}
+          visibleBuildings={VISIBLE_BUILDINGS}
+          showScrubber={!isPastDate}
+          scrubOpen={scrubOpen}
+          onToggleScrub={() => setScrubOpen((open) => !open)}
+          scrubValue={atTime ?? SCRUB_MIN}
+          scrubMin={SCRUB_MIN}
+          scrubMax={SCRUB_MAX}
+          onScrubChange={setScrubTime}
+          onScrubNow={() => setScrubTime(null)}
+          scrubIsNow={isLiveNow || (scrubTime === null && !isSelectedDateToday)}
+          scrubButtonLabel={scrubButtonLabel}
+          scrubHeading={scrubHeading}
+          showAvailabilityFilter={showAvailabilityFilter}
           showOnlyAvailable={showOnlyAvailable}
           setShowOnlyAvailable={setShowOnlyAvailable}
-          showAvailabilityFilter={showAvailabilityFilter}
-          availabilityDisabled={!isSelectedDateToday}
+          availabilityDisabled={atTime === null}
           availabilityFilterLabel={availabilityFilterLabel}
           showOnlyStudyRooms={showOnlyStudyRooms}
           onStudyRoomsChange={handleStudyRoomsChange}
@@ -453,50 +506,34 @@ export default function BSpace() {
           favoriteCount={favorites.length}
           showOnly2h={showOnly2h}
           on2hChange={setShowOnly2h}
-          visibleBuildings={VISIBLE_BUILDINGS}
           filteredCount={displayedFilteredCount}
-          minDate={todayDateValue}
-          maxDate={MAX_DATE_VALUE}
+          countDetail={countDetail}
           onReset={handleReset}
           resetDisabled={!hasActiveFilters}
           t={t}
         />
 
-        {lastUpdated && (
-          <p className="-mt-2 mb-6 text-xs text-muted-foreground">
-            {t.dataSourceLine}{" "}
-            {lastUpdated.toLocaleTimeString("en-GB", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Europe/Rome",
-            })}
-          </p>
-        )}
-
         {isRefreshing && (
-          <div role="status" className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4 text-primary">
-            <div className="flex items-center gap-2 font-medium">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{t.loading}</span>
-            </div>
+          <div role="status" className="mb-4 flex items-center gap-2 rounded-xl border border-free-tint-border bg-free-tint p-3 font-medium text-free-soft-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{t.loading}</span>
           </div>
         )}
 
         {allBuildingsClosed && (
-          <div role="alert" className="mb-6 rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {t.allBuildingsClosed}
           </div>
         )}
 
         {isFutureDate && (
-          <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
+          <div className="mb-4 rounded-xl border border-notice-border bg-notice px-4 py-3 text-sm text-notice-foreground">
             {t.futureDatesNotice}
           </div>
         )}
 
-        {/* Error Display */}
         {error && (
-          <div role="alert" className="mb-6 p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+          <div role="alert" className="mb-4 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <span>{t.error}</span>
               <Button
@@ -510,50 +547,45 @@ export default function BSpace() {
           </div>
         )}
 
-        {/* Room Cards Grid */}
         {isRefreshing ? (
           <RoomGridSkeleton count={9} />
         ) : showNoDataState ? (
-          <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-center text-destructive">
+          <div role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-center text-destructive">
             {t.noDataForDate}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRooms.map(({ building, room }) => (
+          <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))]">
+            {filteredRooms.map((view) => (
               <RoomCard
-                key={`${building}-${room}`}
-                building={building}
-                room={room}
-                buildingDisplayName={fetcher.getBuildingDisplayName(building)}
-                timeSlots={getDisplayTimeSlots(building, room)}
-                slotsLabel={showOnlyStudyRooms ? t.studySessionsToday : t.freeSlotsToday}
-                isFree={isRoomCurrentlyFree(building, room)}
-                isFreeAllDay={isRoomFreeAllDay(building, room)}
-                isOpen={isBuildingOpen(building, selectedDateObj)}
-                openTime={getBuildingOpeningTime(building, selectedDateObj)}
-                availableStatusLabel={availabilityStatusLabel}
-                occupiedStatusLabel={occupiedLabel}
-                buildingClosedMessage={buildingClosedMessage}
-                isFavorite={favoriteSet.has(`${building}/${room}`)}
+                key={view.key}
+                building={view.building}
+                room={view.room}
+                buildingDisplayName={fetcher.getBuildingDisplayName(view.building)}
+                windows={view.windows}
+                status={view.status}
+                marker={atTime}
+                open={view.open}
+                close={view.close}
+                isOpen={view.isOpen}
+                openTime={view.openTime}
+                closedMessage={buildingClosedMessage}
+                hasStudySession={view.hasStudySession}
+                isFreeAllDay={view.isFreeAllDay}
+                studyOnly={showOnlyStudyRooms}
+                isFavorite={favoriteSet.has(view.key)}
                 onToggleFavorite={handleToggleFavorite}
-                showStatus={!isPastDate}
                 t={t}
               />
             ))}
           </div>
         )}
 
-        {/* No Results */}
-        {filteredRooms.length === 0 && !error && !isInitialLoading && !isRefreshing && (
-          <div role="status" className="text-center py-12">
-            <div className="text-muted-foreground text-lg">
-              {availabilityActive
-                ? noAvailabilityMessage
-                : t.noRooms}
-            </div>
+        {filteredRooms.length === 0 && !error && !isRefreshing && !showNoDataState && (
+          <div role="status" className="py-12 text-center text-lg text-muted-foreground">
+            {availabilityActive ? noAvailabilityMessage : t.noRooms}
           </div>
         )}
       </div>
-      </PageLayout>
-    );
-  }
+    </PageLayout>
+  );
+}

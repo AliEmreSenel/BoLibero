@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarPlus, Loader2 } from "lucide-react";
+import { ArrowRight, Bell, CalendarPlus, Loader2 } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
-import { EventCard } from "@/components/event-card";
+import { ClassDetails, TimeCell, roomHref, roomLabel } from "@/components/class-item";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey, romeMinutes, normalizeTime, toMinutes } from "@/lib/time";
@@ -16,7 +16,10 @@ import {
   safeSetItem,
   useLanguage,
 } from "@/lib/settings";
-import { formatDateFull, useTranslation } from "@/lib/i18n";
+import { fill, formatDateFull, useTranslation } from "@/lib/i18n";
+import { formatDuration, formatMinutes } from "@/lib/availability";
+import { isLinkableRoomName } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import { parseISO } from "date-fns";
 
 interface BundleClass {
@@ -58,6 +61,12 @@ export default function ScheduleView() {
   const [canNotify, setCanNotify] = useState(false);
   const [notifyOn, setNotifyOn] = useState(false);
   const t = useTranslation(language);
+  // "Next", gaps and past classes are relative to now; refresh once a minute.
+  const [, setMinuteTick] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setMinuteTick((tick) => tick + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     setCanNotify("Notification" in window);
@@ -146,6 +155,7 @@ export default function ScheduleView() {
     return () => controller.abort();
   }, [classes]);
 
+  // All of the next DAYS_AHEAD days, including those without classes.
   const days = useMemo(() => {
     const byDate = new Map<string, ClientEvent[]>();
     for (const event of events) {
@@ -153,9 +163,13 @@ export default function ScheduleView() {
       list.push(event);
       byDate.set(event.date, list);
     }
-    return [...byDate.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, dayEvents]) => ({ date: parseISO(date), events: dayEvents }));
+    const today = romeDateKey();
+    return Array.from({ length: DAYS_AHEAD }, (_, offset) => {
+      const date = new Date(`${today}T12:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + offset);
+      const key = date.toISOString().slice(0, 10);
+      return { key, date: parseISO(key), isToday: offset === 0, events: byDate.get(key) ?? [] };
+    });
   }, [events]);
 
   const enableReminders = async () => {
@@ -190,32 +204,53 @@ export default function ScheduleView() {
     return () => window.clearInterval(id);
   }, [notifyOn, events, t]);
 
+  const now = romeMinutes();
+  const changedIds = new Set(
+    roomChanges.map((change) => `${change.date}|${change.start}|${change.className}`)
+  );
+  const minutesOf = (time: string) => {
+    const normalized = normalizeTime(time);
+    return normalized ? toMinutes(normalized) : 0;
+  };
+
   return (
     <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className="container mx-auto max-w-4xl p-6">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">{t.myScheduleTitle}</h1>
-          <p className="text-lg text-muted-foreground">
-            {t.myScheduleDescription}
-          </p>
+      <div className="mx-auto w-full max-w-[960px] px-3 py-5 sm:px-6">
+        <div className="mb-3.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2.5">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight">{t.myScheduleTitle}</h1>
+            <p className="text-muted-foreground">{t.myScheduleDescription}</p>
+          </div>
+          {classes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {canNotify && (
+                <button
+                  type="button"
+                  aria-pressed={notifyOn}
+                  onClick={notifyOn ? () => setNotifyOn(false) : enableReminders}
+                  className={cn(
+                    "inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border px-3 text-sm font-semibold",
+                    notifyOn
+                      ? "border-free-bar-muted bg-free-soft text-free-soft-foreground"
+                      : "border-input bg-card hover:bg-muted"
+                  )}
+                >
+                  <Bell className="h-4 w-4" aria-hidden="true" />
+                  {notifyOn ? t.remindersOn : t.enableReminders}
+                </button>
+              )}
+              <Link
+                href="/calendar"
+                className="inline-flex min-h-[38px] items-center rounded-[10px] border border-input bg-card px-3 text-sm font-semibold hover:bg-muted"
+              >
+                {t.editClasses}
+              </Link>
+            </div>
+          )}
         </div>
 
-        {classes.length > 0 && canNotify && (
-          <div className="mb-6">
-            {notifyOn ? (
-              <p className="text-sm text-muted-foreground">
-                {t.remindersEnabled}
-              </p>
-            ) : (
-              <Button variant="outline" onClick={enableReminders}>
-                {t.enableReminders}
-              </Button>
-            )}
-          </div>
-        )}
-
         {classes.length === 0 ? (
-          <div className="rounded-lg border py-16 text-center">
+          <div className="rounded-2xl border bg-card py-16 text-center">
             <p className="mb-4 text-muted-foreground">{t.myScheduleEmpty}</p>
             <Button asChild>
               <Link href="/calendar">
@@ -230,48 +265,136 @@ export default function ScheduleView() {
             {t.loading}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="flex flex-col gap-3.5">
             {error && (
-              <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {t.loadEventsError}
               </p>
             )}
             {roomChanges.length > 0 && (
-              <div className="rounded-md border border-amber-300/50 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-200">
-                <p className="mb-1 font-medium">{t.roomChangeBanner}</p>
-                <ul className="list-disc space-y-1 pl-5">
-                  {roomChanges.map((change, index) => (
-                    <li key={index}>
-                      {formatDateFull(parseISO(change.date), language)}{" "}
-                      {change.start} — {change.className}: {change.from} →{" "}
-                      {change.to}
-                    </li>
-                  ))}
-                </ul>
+              <div role="status" className="flex items-start gap-2.5 rounded-xl border border-notice-border bg-notice px-3.5 py-2.5 text-notice-foreground">
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] border-[1.5px] border-warn-border bg-warn font-extrabold text-warn-foreground"
+                >
+                  !
+                </span>
+                <div>
+                  <p className="font-semibold">{t.roomChangeBanner}</p>
+                  <ul className="text-sm">
+                    {roomChanges.map((change, index) => (
+                      <li key={index}>
+                        {formatDateFull(parseISO(change.date), language)} {change.start} —{" "}
+                        <strong>{change.className}</strong>: {change.from} → {change.to}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
-            {days.length === 0 && (
-              <p role="status" className="py-8 text-center text-muted-foreground">
+            {events.length === 0 && (
+              <p role="status" className="py-2 text-center text-muted-foreground">
                 {t.noEventsNextDays}
               </p>
             )}
-            {days.map((day) => (
-              <section key={day.date.toISOString()}>
-                <h2 className="mb-3 text-xl font-semibold">
-                  {formatDateFull(day.date, language)}
-                </h2>
-                <div className="space-y-4">
-                  {day.events.map((event, index) => (
-                    <EventCard
-                      key={`${event.date}-${event.start}-${event.class}-${index}`}
-                      event={event}
-                      showTeachers={false}
-                      language={language}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
+            {days.map((day) => {
+              const sorted = [...day.events].sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
+              const nextIndex = day.isToday ? sorted.findIndex((event) => minutesOf(event.start) > now) : -1;
+              return (
+                <section
+                  key={day.key}
+                  aria-label={formatDateFull(day.date, language)}
+                  className="overflow-hidden rounded-2xl border bg-card"
+                >
+                  <div
+                    className={cn(
+                      "flex items-baseline justify-between border-b px-4 py-2.5",
+                      day.isToday ? "bg-free-tint" : "bg-muted/50"
+                    )}
+                  >
+                    <h2 className="text-[15px] font-extrabold capitalize">
+                      {day.isToday ? `${t.today}, ` : ""}
+                      {formatDateFull(day.date, language)}
+                    </h2>
+                    {sorted.length > 0 && (
+                      <span className="text-[13px] text-muted-foreground">
+                        {sorted.length} {sorted.length === 1 ? t.classSingular : t.classPlural}
+                      </span>
+                    )}
+                  </div>
+                  {sorted.length === 0 && (
+                    <p className="px-4 py-3 text-muted-foreground">{t.noClasses}</p>
+                  )}
+                  {sorted.map((event, index) => {
+                    const start = minutesOf(event.start);
+                    const end = minutesOf(event.end);
+                    const past = day.isToday && end <= now;
+                    const previous = sorted[index - 1];
+                    const gapStart = previous ? minutesOf(previous.end) : null;
+                    const showGap =
+                      day.isToday && gapStart !== null && start - gapStart >= 30 && start > now;
+                    const inGap = showGap && gapStart !== null && gapStart <= now;
+                    const room = event.rooms.find((candidate) => isLinkableRoomName(candidate.roomName));
+                    const moved = changedIds.has(`${event.date}|${event.start}|${event.class}`);
+                    return (
+                      <div key={`${event.date}-${event.start}-${event.class}-${index}`}>
+                        {showGap && gapStart !== null && (
+                          <Link
+                            href="/"
+                            className="flex min-h-10 items-center justify-between gap-2.5 border-b bg-free-tint px-4 text-[13px] text-free-soft-foreground"
+                          >
+                            <span>
+                              <strong>
+                                {inGap
+                                  ? fill(t.youreFreeUntil, { time: formatMinutes(start) })
+                                  : fill(t.gapDuration, { d: formatDuration(start - gapStart) })}
+                              </strong>{" "}
+                              · {t.findARoom}
+                            </span>
+                            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                          </Link>
+                        )}
+                        <div
+                          className={cn(
+                            "grid grid-cols-[52px_minmax(0,1fr)] items-center gap-3 border-b px-4 py-3 sm:grid-cols-[104px_minmax(0,1fr)_auto]",
+                            past && "opacity-55"
+                          )}
+                        >
+                          <TimeCell start={event.start} end={event.end} />
+                          <ClassDetails
+                            event={event}
+                            language={language}
+                            showTeachers
+                            showRooms={!room}
+                            badges={
+                              moved ? (
+                                <span className="rounded-full bg-notice px-2 text-[11px] font-bold text-notice-foreground">
+                                  {t.roomChanged}
+                                </span>
+                              ) : undefined
+                            }
+                          />
+                          {room && (
+                            <Link
+                              href={roomHref(room.building, room.roomName)}
+                              className="col-start-2 inline-flex min-h-[34px] items-center gap-1.5 justify-self-start whitespace-nowrap rounded-[9px] border px-2.5 text-sm font-semibold hover:bg-muted sm:col-start-auto sm:justify-self-end"
+                            >
+                              {roomLabel(room)}
+                              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Link>
+                          )}
+                        </div>
+                        {index === nextIndex && (
+                          <div className="flex min-h-10 items-center border-b bg-free px-4 text-[13px] text-free-foreground">
+                            <strong>{fill(t.nextIn, { d: formatDuration(start - now) })}</strong>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </section>
+              );
+            })}
           </div>
         )}
       </div>

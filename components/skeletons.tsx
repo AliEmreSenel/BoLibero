@@ -1,114 +1,70 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-
 interface SkeletonProps {
   className?: string;
 }
 
 function Skeleton({ className = "" }: SkeletonProps) {
-  return (
-    <div className={`animate-pulse bg-muted rounded ${className}`} />
-  );
+  return <div className={`animate-pulse rounded bg-muted ${className}`} />;
 }
 
 export function RoomCardSkeleton() {
   return (
-    <Card className="hover:shadow-md transition-shadow min-h-[220px]">
-      <CardContent className="p-6 flex flex-col h-full">
-        {/* Room Header */}
-        <div className="flex items-center justify-between mb-4">
-          <Skeleton className="h-7 w-24" />
-          <Skeleton className="h-5 w-20" />
-        </div>
-
-        {/* Content area */}
-        <div className="flex-grow">
-          {/* Time Slot Badges */}
-          <div className="mb-4 flex flex-wrap gap-2 min-h-[32px]">
+    <div className="flex min-h-[188px] flex-col overflow-hidden rounded-2xl border bg-card">
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1.5">
             <Skeleton className="h-6 w-24" />
-            <Skeleton className="h-6 w-24" />
-            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-3.5 w-16" />
           </div>
-
-          {/* Room Status */}
-          <div className="mb-4">
-            <Skeleton className="h-5 w-28" />
-          </div>
+          <Skeleton className="h-8 w-8 rounded-lg" />
         </div>
-
-        {/* More Info Link */}
-        <Skeleton className="h-8 w-full" />
-      </CardContent>
-    </Card>
+        <div className="flex flex-wrap gap-1.5">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <Skeleton className="h-4 w-full" />
+      </div>
+      <Skeleton className="h-12 w-full rounded-none" />
+    </div>
   );
 }
 
 export function SearchFiltersSkeleton() {
   return (
-    <Card className="mb-6">
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-4 mb-4 items-end">
-          <div className="xl:col-span-4 space-y-1">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="xl:col-span-2 space-y-1">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="xl:col-span-2 space-y-1">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="xl:col-span-2 space-y-1">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="xl:col-span-2 space-y-1">
-            <Skeleton className="h-3 w-12" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
-
-        {/* Campus Navigation */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Skeleton className="h-10 w-32 rounded-full" />
-          <Skeleton className="h-10 w-24 rounded-full" />
-          <Skeleton className="h-10 w-28 rounded-full" />
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <Skeleton className="h-10 w-24" />
-            <Skeleton className="h-10 w-32" />
-            <Skeleton className="h-10 w-36" />
-          </div>
-          <Skeleton className="h-5 w-24" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="mb-4 rounded-2xl border bg-card">
+      <div className="flex flex-wrap gap-2.5 p-3">
+        <Skeleton className="h-[42px] min-w-[200px] flex-[3_1_260px]" />
+        <Skeleton className="h-[42px] min-w-[180px] flex-[1_1_230px]" />
+        <Skeleton className="h-[42px] w-24" />
+      </div>
+      <div className="flex flex-wrap gap-2 border-t px-3 py-2.5">
+        <Skeleton className="h-9 w-64" />
+        <Skeleton className="h-9 w-28 rounded-full" />
+        <Skeleton className="h-9 w-24 rounded-full" />
+        <Skeleton className="h-9 w-32 rounded-full" />
+      </div>
+    </div>
   );
 }
 
 export function PageHeaderSkeleton() {
   return (
-    <div className="mb-8">
-      <Skeleton className="h-9 w-48 mb-2" />
-      <Skeleton className="h-6 w-80" />
-      <div className="mt-4 flex items-center gap-2">
-        <Skeleton className="h-5 w-48" />
+    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-2">
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-4 w-72" />
       </div>
+      <Skeleton className="h-12 w-52 rounded-xl" />
     </div>
   );
 }
 
 export function RoomGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {Array.from({ length: count }).map((_, i) => (
-        <RoomCardSkeleton key={i} />
+    <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))]">
+      {Array.from({ length: count }).map((_, index) => (
+        <RoomCardSkeleton key={index} />
       ))}
     </div>
   );
@@ -116,26 +72,21 @@ export function RoomGridSkeleton({ count = 6 }: { count?: number }) {
 
 export function CalendarViewSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-1">
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="h-8 w-full mb-4" />
-            <Skeleton className="h-64 w-full" />
-          </CardContent>
-        </Card>
+    <div className="flex flex-wrap items-start gap-4">
+      <div className="flex-[1_1_300px] rounded-2xl border bg-card p-3.5">
+        <Skeleton className="mx-auto mb-3 h-6 w-36" />
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: 35 }).map((_, index) => (
+            <Skeleton key={index} className="h-9 rounded-lg" />
+          ))}
+        </div>
       </div>
-      <div className="lg:col-span-2">
-        <Card>
-          <CardContent className="p-6">
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-5 w-32 mb-6" />
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="min-w-0 flex-[999_1_560px] space-y-3 rounded-2xl border bg-card p-4">
+        <Skeleton className="h-6 w-56" />
+        <Skeleton className="h-4 w-full" />
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-14 w-full rounded-xl" />
+        ))}
       </div>
     </div>
   );
@@ -143,19 +94,15 @@ export function CalendarViewSkeleton() {
 
 export function DetailHeaderSkeleton() {
   return (
-    <>
-      <div className="mb-6 flex items-center justify-between">
-        <Skeleton className="h-10 w-40" />
-        <Skeleton className="h-9 w-28" />
-      </div>
-      <div className="mb-8 text-center">
-        <Skeleton className="h-9 w-32 mx-auto mb-2" />
-        <Skeleton className="h-6 w-48 mx-auto mb-2" />
-        <div className="mt-4 flex items-center justify-center gap-4">
-          <Skeleton className="h-6 w-36" />
-          <Skeleton className="h-5 w-24" />
+    <div className="mb-4 space-y-4">
+      <Skeleton className="h-5 w-32" />
+      <div className="overflow-hidden rounded-2xl border bg-card">
+        <div className="space-y-2 p-4">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-4 w-56" />
         </div>
+        <Skeleton className="h-12 w-full rounded-none" />
       </div>
-    </>
+    </div>
   );
 }

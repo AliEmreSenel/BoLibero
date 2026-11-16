@@ -3,27 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
+  ArrowRight,
   CalendarPlus,
   Check,
   Clipboard,
   ExternalLink,
   Loader2,
   Search,
-  Trash2,
+  X,
 } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { MAX_CLASSES } from "@/lib/constants";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { useTranslation } from "@/lib/i18n";
+import { fill, useTranslation } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import {
   SAVED_CLASSES_KEY,
   safeGetItem,
@@ -160,241 +153,268 @@ export default function CalendarBuilder() {
     window.setTimeout(() => setCopiedList(false), 2500);
   };
 
+  const subscribeBand = "flex min-h-12 items-center justify-between gap-2 px-4 font-bold";
+
   return (
     <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className="container mx-auto max-w-7xl p-6">
-        <div className="mb-8">
-          <div className="mb-2 flex items-center gap-3">
-            <CalendarPlus className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-bold">{t.classCalendarTitle}</h2>
-          </div>
-          <p className="max-w-3xl text-lg text-muted-foreground">
-            {t.classCalendarDescription}
-          </p>
+      <div className={cn("mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6", selected.length > 0 && "pb-32 lg:pb-5")}>
+        <div className="mb-3.5">
+          <h1 className="text-2xl font-extrabold tracking-tight">{t.classCalendarTitle}</h1>
+          <p className="max-w-3xl text-muted-foreground">{t.classCalendarDescription}</p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t.chooseClasses}</CardTitle>
-              <CardDescription>{t.chooseClassesDescription}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
+        <div className="flex flex-wrap items-start gap-4">
+          <section
+            aria-label={t.chooseClasses}
+            className="min-w-0 flex-[999_1_560px] overflow-hidden rounded-2xl border bg-card"
+          >
+            <div className="border-b p-3">
+              <div className="relative">
+                <label htmlFor="class-search" className="sr-only">
+                  {t.chooseClasses}
+                </label>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <input
+                  id="class-search"
+                  type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={t.classSearchPlaceholder}
-                  className="pl-10"
+                  className="h-[42px] w-full rounded-[10px] border border-input bg-background pl-9 pr-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
                 />
               </div>
+              <p className="mt-2 text-xs text-muted-foreground">{t.chooseClassesDescription}</p>
+            </div>
 
-              {loading ? (
-                <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {t.loadingClasses}
-                </div>
-              ) : error ? (
-                <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-destructive/20 bg-destructive/10 p-4 text-destructive">
-                  <span>{error}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setReloadKey((key) => key + 1)}
-                  >
-                    {t.refresh}
-                  </Button>
-                </div>
-              ) : (
-                <div className="max-h-none space-y-2 pr-1 lg:max-h-[560px] lg:overflow-y-auto">
+            {loading ? (
+              <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                {t.loadingClasses}
+              </div>
+            ) : error ? (
+              <div role="alert" className="m-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+                <span>{error}</span>
+                <Button variant="outline" size="sm" onClick={() => setReloadKey((key) => key + 1)}>
+                  {t.refresh}
+                </Button>
+              </div>
+            ) : (
+              <div className="lg:max-h-[640px] lg:overflow-y-auto">
+                <ul>
                   {visibleClasses.map((item) => {
                     const isSelected = selectedIds.has(item.id);
                     const isDisabled = !isSelected && capReached;
                     return (
-                      <button
-                        type="button"
+                      <li
                         key={item.id}
-                        onClick={() => toggleClass(item)}
-                        aria-pressed={isSelected}
-                        disabled={isDisabled}
-                        className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
-                          isSelected ? "border-primary bg-primary/5" : ""
-                        } ${isDisabled ? "opacity-50 hover:bg-transparent" : ""}`}
+                        className={cn(
+                          "flex items-center gap-3 border-b px-3 py-2.5",
+                          isSelected && "bg-free-tint"
+                        )}
                       >
-                        <span
-                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
-                            isSelected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-input"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3.5 w-3.5" />}
+                        <span className="hidden min-w-[58px] shrink-0 rounded-[7px] bg-muted px-1.5 py-0.5 text-center text-[13px] font-bold tabular-nums sm:inline">
+                          {item.code}
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="mb-1 flex flex-wrap items-center gap-2">
-                            <span className="font-semibold">{item.title}</span>
-                            <Badge variant="secondary">
-                              {t.classNo} {item.code}
-                            </Badge>
-                            <Badge variant="outline">{item.section}</Badge>
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                  {capReached && (
-                    <p className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-                      {t.capReached.replace("{max}", String(MAX_CLASSES))}
-                    </p>
-                  )}
-                  {matches.length > 100 && (
-                    <p className="text-xs text-muted-foreground">{t.first100Note}</p>
-                  )}
-                  {visibleClasses.length === 0 && (
-                    <p role="status" className="py-12 text-center text-muted-foreground">
-                      {t.noClassesFound}
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle>{t.yourBundle}</CardTitle>
-                  <Badge variant="secondary">
-                    {selected.length}/{MAX_CLASSES}
-                  </Badge>
-                </div>
-                <CardDescription>{t.yourBundleDescription}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {selected.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    {t.emptyBundle}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {selected.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between gap-3 rounded-md bg-muted p-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{item.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {item.code} · {item.section}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate">
+                            <strong>{item.title}</strong>{" "}
+                            <span className="text-muted-foreground">· {item.section}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground sm:hidden">
+                            {t.classNo} {item.code}
                           </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0"
+                        <button
+                          type="button"
                           onClick={() => toggleClass(item)}
-                          aria-label={t.removeClass}
+                          aria-pressed={isSelected}
+                          aria-label={`${isSelected ? t.removeClass : t.addClass}: ${item.title} ${item.section}`}
+                          disabled={isDisabled}
+                          className={cn(
+                            "inline-flex min-h-9 min-w-[72px] shrink-0 items-center justify-center gap-1 rounded-[10px] border px-3 text-sm font-bold disabled:opacity-50",
+                            isSelected
+                              ? "border-free bg-free text-free-foreground"
+                              : "border-input bg-card hover:bg-muted"
+                          )}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          {isSelected && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                          {isSelected ? t.addedClass : t.addClass}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {capReached && (
+                  <p className="m-3 rounded-xl border border-free-tint-border bg-free-tint p-3 text-sm text-free-soft-foreground">
+                    {t.capReached.replace("{max}", String(MAX_CLASSES))}
+                  </p>
+                )}
+                {matches.length > 100 && (
+                  <p className="p-3 text-xs text-muted-foreground">{t.first100Note}</p>
+                )}
+                {visibleClasses.length === 0 && (
+                  <p role="status" className="py-12 text-center text-muted-foreground">
+                    {t.noClassesFound}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
+
+          <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-4">
+            <section aria-label={t.yourBundle} className="rounded-2xl border bg-card px-4 py-3.5">
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-base font-extrabold">{t.yourBundle}</h2>
+                <span className="text-muted-foreground tabular-nums">
+                  <strong className="text-foreground">{selected.length}</strong> / {MAX_CLASSES}
+                </span>
+              </div>
+              <div
+                role="progressbar"
+                aria-label={t.yourBundle}
+                aria-valuemin={0}
+                aria-valuemax={MAX_CLASSES}
+                aria-valuenow={selected.length}
+                className="mb-2.5 mt-2 h-1.5 overflow-hidden rounded-full bg-track"
+              >
+                <div className="h-full bg-free-bar" style={{ width: `${(selected.length / MAX_CLASSES) * 100}%` }} />
+              </div>
+              {selected.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t.emptyBundle}</p>
+              ) : (
+                <>
+                  <ul>
+                    {selected.map((item) => (
+                      <li key={item.id} className="flex min-h-[38px] items-center gap-2.5 border-t">
+                        <span className="text-xs font-bold text-muted-foreground tabular-nums">{item.code}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm">
+                          {item.title} · {item.section}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleClass(item)}
+                          aria-label={`${t.removeClass}: ${item.title} ${item.section}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
                     ))}
-                    <div className="pt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={copyListLink}
-                      >
-                        {copiedList ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Clipboard className="h-4 w-4" />
-                        )}
-                        {copiedList ? t.copied : t.shareClassList}
-                      </Button>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t.shareClassListHelp}
-                      </p>
-                    </div>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={copyListLink}
+                    className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-free-soft-foreground hover:underline"
+                  >
+                    {copiedList ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                    {copiedList ? t.copied : t.shareClassList}
+                  </button>
+                  <p className="text-xs text-muted-foreground">{t.shareClassListHelp}</p>
+                </>
+              )}
+            </section>
+
+            <section
+              aria-label={t.subscribeCalendar}
+              className={cn(
+                "overflow-hidden rounded-2xl border bg-card",
+                subscriptionUrl ? "border-free-border" : ""
+              )}
+            >
+              <div className="flex flex-col gap-2.5 px-4 py-3.5">
+                <h2 className="text-base font-extrabold">{t.subscribeCalendar}</h2>
+                <p className="text-sm text-muted-foreground">{t.subscribeDescription}</p>
+                {subscriptionUrl && (
+                  <div className="flex gap-1.5">
+                    <label htmlFor="feed-url" className="sr-only">
+                      {t.subscriptionUrlLabel}
+                    </label>
+                    <input
+                      id="feed-url"
+                      readOnly
+                      value={subscriptionUrl}
+                      onFocus={(event) => event.target.select()}
+                      className="h-[38px] min-w-0 flex-1 rounded-[10px] border border-input bg-background px-2.5 text-xs text-foreground"
+                    />
+                    <button
+                      type="button"
+                      onClick={copyUrl}
+                      className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-input bg-card px-3 text-sm font-bold hover:bg-muted"
+                    >
+                      {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                      {copied ? t.copied : t.copySubscriptionUrl}
+                    </button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card className={selected.length ? "border-primary/50" : ""}>
-              <CardHeader>
-                <CardTitle>{t.subscribeCalendar}</CardTitle>
-                <CardDescription>{t.subscribeDescription}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  className="w-full"
-                  onClick={copyUrl}
-                  disabled={!subscriptionUrl}
-                >
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Clipboard className="h-4 w-4" />
-                  )}
-                  {copied ? t.copied : t.copySubscriptionUrl}
-                </Button>
-                {subscriptionUrl ? (
-                  <Button asChild variant="outline" className="w-full">
-                    <a
-                      href={webcalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={() => setSubscribed(true)}
-                    >
-                      <CalendarPlus className="h-4 w-4" />
-                      {t.openCalendarApp}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button variant="outline" className="w-full" disabled>
-                    <CalendarPlus className="h-4 w-4" />
-                    {t.openCalendarApp}
-                  </Button>
-                )}
                 {subscribed && subscriptionUrl && (
-                  <p className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs text-muted-foreground">
-                    {t.webcalClicked}
-                  </p>
+                  <p className="rounded-lg bg-free-tint p-2 text-xs text-free-soft-foreground">{t.webcalClicked}</p>
                 )}
-                {subscriptionUrl && (
-                  <a
-                    href={subscriptionUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline"
-                  >
-                    {t.previewCalendarFeed}
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                )}
-                <p className="pt-2 text-xs leading-relaxed text-muted-foreground">
-                  {t.calendarCoverage}
-                  <br />
-                  {t.subscriptionHelp}
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  {t.subscriptionHelp} {t.calendarCoverage}
                 </p>
                 {subscriptionUrl && (
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    {t.resubscribeHint}
-                  </p>
+                  <>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{t.resubscribeHint}</p>
+                    <a
+                      href={subscriptionUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      {t.previewCalendarFeed}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              {subscriptionUrl ? (
+                <a
+                  href={webcalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setSubscribed(true)}
+                  className={cn(subscribeBand, "bg-free text-free-foreground")}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+                    {t.openCalendarApp}
+                  </span>
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+              ) : (
+                <span className={cn(subscribeBand, "bg-busy text-muted-foreground")}>{t.openCalendarApp}</span>
+              )}
+            </section>
+          </aside>
         </div>
 
-        <p className="mt-8 text-xs leading-relaxed text-muted-foreground">
-          {t.disclaimer}
-        </p>
+        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">{t.disclaimer}</p>
       </div>
+
+      {subscriptionUrl && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
+          <div className="flex items-center justify-between gap-2 px-3 py-2 text-[13px] text-muted-foreground">
+            <span>{fill(t.classesSelected, { n: selected.length, max: MAX_CLASSES })}</span>
+            <button
+              type="button"
+              onClick={copyUrl}
+              className="min-h-8 rounded-lg border border-input bg-card px-2.5 font-semibold text-foreground"
+            >
+              {copied ? t.copied : t.copyFeedUrl}
+            </button>
+          </div>
+          <a
+            href={webcalUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setSubscribed(true)}
+            className={cn(subscribeBand, "bg-free text-free-foreground")}
+          >
+            {t.openCalendarApp}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
+      )}
     </PageLayout>
   );
 }

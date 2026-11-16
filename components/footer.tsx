@@ -1,5 +1,4 @@
 "use client";
-import { Github, ExternalLink } from "lucide-react";
 import { type Language, useTranslation } from "@/lib/i18n";
 
 interface FooterProps {
@@ -10,67 +9,40 @@ export function Footer({ language }: FooterProps) {
   const t = useTranslation(language);
 
   return (
-    <footer className="border-t bg-muted/50 mt-auto pb-[env(safe-area-inset-bottom)]">
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex flex-col items-center space-y-4 text-center">
-          {/* Disclaimer */}
-          <div className="max-w-2xl">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t.disclaimer}
-            </p>
-          </div>
-
-          {/* Author and GitHub Link */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">{t.author}</span>
-              <a
-                href="https://github.com/AliEmreSenel"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium hover:underline flex items-center gap-1"
-              >
-                Ali Emre Senel
-                <ExternalLink className="h-3 w-3" />
-              </a>
-            </div>
-
-            <div className="hidden sm:block text-muted-foreground">•</div>
-
-            <div className="flex items-center gap-4">
-              <a
-                href="/privacy-policy"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t.privacy}
-              </a>
-              <a
-                href="https://github.com/AliEmreSenel/BSpace/issues"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {t.contact}
-              </a>
-            </div>
-
-            <div className="hidden sm:block text-muted-foreground">•</div>
-
+    <footer className="mt-auto border-t bg-card pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-5 text-[13px] text-muted-foreground sm:px-6">
+        <p className="max-w-2xl">{t.disclaimer}</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span>
+            {t.author}{" "}
             <a
-              href="https://github.com/AliEmreSenel/BSpace"
+              href="https://github.com/AliEmreSenel"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="font-medium text-foreground hover:underline"
             >
-              <Github className="h-4 w-4" />
-              {t.githubLink}
+              Ali Emre Senel
             </a>
-          </div>
-
-          {/* App Name */}
-          <div className="text-xs text-muted-foreground">
-            {t.appName} © {new Date().getFullYear()}
-          </div>
+          </span>
+          <a href="/privacy-policy" className="hover:text-foreground">
+            {t.privacy}
+          </a>
+          <a
+            href="https://github.com/AliEmreSenel/BSpace/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground"
+          >
+            {t.contact}
+          </a>
+          <a
+            href="https://github.com/AliEmreSenel/BSpace"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-foreground"
+          >
+            GitHub
+          </a>
         </div>
       </div>
     </footer>
