@@ -17,7 +17,7 @@ import { isFreeTimeEvent, isLinkableRoomName, resolveRoom } from "@/lib/constant
 import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import { buildWindows, formatDuration, formatMinutes, roomStatusAt, type RoomStatus } from "@/lib/availability";
 import { normalizeTime, romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
-import { cn } from "@/lib/utils";
+import { cn, decodeRouteParam } from "@/lib/utils";
 
 const fetcher = ScheduleFetcher.getInstance();
 
@@ -37,12 +37,7 @@ const startMinutes = (event: ClientEvent) => {
 export default function ProfessorCalendar() {
   const params = useParams();
   const rawName = Array.isArray(params.name) ? params.name[0] : (params.name as string);
-  let name = rawName;
-  try {
-    name = decodeURIComponent(rawName);
-  } catch {
-    // Keep malformed percent-encoding as a literal name.
-  }
+  const name = decodeRouteParam(rawName);
 
   const [profEvents, setProfEvents] = useState<ClientEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { decodeRouteParam } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import ProfessorCalendar from "./ProfessorCalendar";
 import { SITE_URL } from "@/lib/site";
@@ -18,14 +19,7 @@ export function generateStaticParams() {
     return [];
 }
 
-function decodePathSegment(value: string): string {
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        // keep the raw segment if it is not valid percent-encoding
-        return value;
-    }
-}
+const decodePathSegment = decodeRouteParam;
 
 async function resolveProfessor(name: string): Promise<string> {
     const displayName = decodePathSegment(name);

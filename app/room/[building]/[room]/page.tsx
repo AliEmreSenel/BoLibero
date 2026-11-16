@@ -1,5 +1,6 @@
 // app/room/[building]/[room]/page.tsx
 import type { Metadata } from "next";
+import { decodeRouteParam } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import RoomCalendar from "./RoomCalendar";
 import { BUILDING_CONFIG, getBuildingDisplayName, isLinkableRoomName, normalizeEntity } from "@/lib/constants";
@@ -26,13 +27,7 @@ export function generateStaticParams() {
         );
 }
 
-function decodePathSegment(value: string): string {
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        return value;
-    }
-}
+const decodePathSegment = decodeRouteParam;
 
 function resolveRoom(building: string, room: string) {
     const buildingKey = decodePathSegment(building);
