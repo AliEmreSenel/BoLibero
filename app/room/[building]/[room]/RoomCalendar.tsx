@@ -17,21 +17,14 @@ import { FAVORITE_ROOMS_KEY, safeGetItem, safeSetItem, useLanguage } from "@/lib
 import { roomDayFromEvents } from "@/lib/room-day";
 import { formatDuration, formatMinutes, roomStatusAt } from "@/lib/availability";
 import { normalizeTime, romeDateKey, romeMinutes } from "@/lib/time";
-import { cn } from "@/lib/utils";
+import { cn, decodeRouteParam } from "@/lib/utils";
 
 export default function RoomCalendar() {
   const params = useParams();
   const rawBuilding = Array.isArray(params.building) ? params.building[0] : (params.building as string);
   const rawRoom = Array.isArray(params.room) ? params.room[0] : (params.room as string);
-  const decode = (value: string) => {
-    try {
-      return decodeURIComponent(value);
-    } catch {
-      return value;
-    }
-  };
-  const building = decode(rawBuilding);
-  const room = decode(rawRoom);
+  const building = decodeRouteParam(rawBuilding);
+  const room = decodeRouteParam(rawRoom);
   const favoriteKey = `${building}/${room}`;
 
   const [roomEvents, setRoomEvents] = useState<ClientEvent[]>([]);

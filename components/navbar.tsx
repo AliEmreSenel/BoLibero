@@ -1,5 +1,5 @@
 "use client";
-import { Building2, CalendarPlus, CalendarDays } from "lucide-react";
+import { BookOpen, Building2, CalendarPlus, CalendarDays } from "lucide-react";
 import { SettingsMenu } from "@/components/settings-menu";
 import { type Language, useTranslation } from "@/lib/i18n";
 import Link from "next/link";
@@ -39,11 +39,8 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
   return (
     <header className="border-b bg-card pt-[env(safe-area-inset-top)]">
       <div className="mx-auto flex min-h-14 w-full max-w-[1240px] items-center gap-2 px-4 sm:min-h-[60px] sm:gap-6 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 text-lg font-extrabold">
-          <span
-            aria-hidden="true"
-            className="h-3 w-3 rounded-full bg-free-bar ring-4 ring-free-soft"
-          />
+        <Link href="/" className="flex items-center gap-2.5 text-lg font-extrabold hover:opacity-80">
+          <BookOpen className="h-7 w-7" aria-hidden="true" />
           {t.appName}
         </Link>
         <nav aria-label={t.navigation} className="ml-auto flex items-center sm:ml-0 sm:flex-1 sm:gap-1">
