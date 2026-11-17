@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
 import { MAX_CLASSES } from "@/lib/constants";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { fill, useTranslation } from "@/lib/i18n";
 import { format } from "date-fns";
@@ -40,6 +41,7 @@ export default function CalendarBuilder() {
   const [language, setLanguage] = useLanguage();
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [selected, setSelected] = useState<ClassOption[]>([]);
+  const [selectionRestored, setSelectionRestored] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,7 @@ export default function CalendarBuilder() {
   const [copied, setCopied] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [copiedList, setCopiedList] = useState(false);
+  const [bundleOpen, setBundleOpen] = useState(false);
   const searchParams = useSearchParams();
   const [reloadKey, setReloadKey] = useState(0);
   const t = useTranslation(language);
@@ -60,6 +63,7 @@ export default function CalendarBuilder() {
     } catch {
       safeRemoveItem(SAVED_CLASSES_KEY);
     }
+    setSelectionRestored(true);
   }, []);
 
   useEffect(() => {
@@ -100,13 +104,11 @@ export default function CalendarBuilder() {
   }, [reloadKey, searchParams, t.classCatalogError]);
 
   useEffect(() => {
-    safeSetItem(SAVED_CLASSES_KEY, JSON.stringify(selected));
-  }, [selected]);
+    // Restore storage before persisting, including React's repeated mount effects.
+    if (selectionRestored) safeSetItem(SAVED_CLASSES_KEY, JSON.stringify(selected));
+  }, [selected, selectionRestored]);
 
-  const selectedIds = useMemo(
-    () => new Set(selected.map((item) => item.id)),
-    [selected]
-  );
+  const selectedIds = useMemo(() => new Set(selected.map((item) => item.id)), [selected]);
   const matches = useMemo(() => {
     const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
     return classes.filter((item) => {
@@ -179,44 +181,242 @@ export default function CalendarBuilder() {
       .filter(Boolean)
       .join(" · ");
 
+  const bundleContent = (
+    <>
+      <section aria-label={t.yourBundle} className="rounded-2xl border bg-card px-4 py-3.5">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-base font-extrabold">{t.yourBundle}</h2>
+          <span className="text-muted-foreground tabular-nums">
+            <strong className="text-foreground">{selected.length}</strong> / {MAX_CLASSES}
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label={t.yourBundle}
+          aria-valuemin={0}
+          aria-valuemax={MAX_CLASSES}
+          aria-valuenow={selected.length}
+          className="mb-2.5 mt-2 h-1.5 overflow-hidden rounded-full bg-track"
+        >
+          <div
+            className="h-full bg-free-bar"
+            style={{ width: `${(selected.length / MAX_CLASSES) * 100}%` }}
+          />
+        </div>
+        {selected.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t.emptyBundle}</p>
+        ) : (
+          <>
+            <ul>
+              {selected.map((item) => (
+                <li key={item.id} className="flex min-h-[38px] items-center gap-2.5 border-t">
+                  <span className="text-xs font-bold text-muted-foreground tabular-nums">
+                    {item.code}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    {item.title} · {item.section}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleClass(item)}
+                    aria-label={`${t.removeClass}: ${item.title} ${item.section}`}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={copyListLink}
+              className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-free-soft-foreground hover:underline"
+            >
+              {copiedList ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+              {copiedList ? t.copied : t.shareClassList}
+            </button>
+            <p className="text-xs text-muted-foreground">{t.shareClassListHelp}</p>
+          </>
+        )}
+      </section>
+
+      <section
+        aria-label={t.subscribeCalendar}
+        className={cn(
+          "overflow-hidden rounded-2xl border bg-card",
+          subscriptionUrl ? "border-free-border" : "",
+        )}
+      >
+        <div className="flex flex-col gap-2.5 px-4 py-3.5">
+          <h2 className="text-base font-extrabold">{t.subscribeCalendar}</h2>
+          <p className="text-sm text-muted-foreground">{t.subscribeDescription}</p>
+          {subscriptionUrl && (
+            <div className="flex gap-1.5">
+              <input
+                aria-label={t.subscriptionUrlLabel}
+                readOnly
+                value={subscriptionUrl}
+                onFocus={(event) => event.target.select()}
+                className="h-[38px] min-w-0 flex-1 rounded-[10px] border border-input bg-background px-2.5 text-xs text-foreground"
+              />
+              <button
+                type="button"
+                onClick={copyUrl}
+                className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-input bg-card px-3 text-sm font-bold hover:bg-muted"
+              >
+                {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                {copied ? t.copied : t.copySubscriptionUrl}
+              </button>
+            </div>
+          )}
+          {subscribed && subscriptionUrl && (
+            <p className="rounded-lg bg-free-tint p-2 text-xs text-free-soft-foreground">
+              {t.webcalClicked}
+            </p>
+          )}
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {t.subscriptionHelp} {t.calendarCoverage}
+          </p>
+          {subscriptionUrl && (
+            <>
+              <p className="text-xs leading-relaxed text-muted-foreground">{t.resubscribeHint}</p>
+              <a
+                href={subscriptionUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {t.previewCalendarFeed}
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </>
+          )}
+        </div>
+        {subscriptionUrl ? (
+          <a
+            href={webcalUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setSubscribed(true)}
+            className={cn(subscribeBand, "bg-free text-free-foreground")}
+          >
+            <span className="inline-flex items-center gap-2">
+              <CalendarPlus className="h-4 w-4" aria-hidden="true" />
+              {t.openCalendarApp}
+            </span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        ) : (
+          <span className={cn(subscribeBand, "bg-busy text-muted-foreground")}>
+            {t.openCalendarApp}
+          </span>
+        )}
+      </section>
+    </>
+  );
+  const mobileDock = (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card pb-[env(safe-area-inset-bottom)] lg:hidden">
+      <div className="flex items-center justify-between gap-2 px-3 text-xs text-muted-foreground">
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded={bundleOpen}
+          onClick={() => setBundleOpen(true)}
+          className="min-h-11 text-left font-medium underline decoration-dotted underline-offset-4"
+        >
+          <span aria-live="polite">
+            {fill(t.classesSelected, { n: selected.length, max: MAX_CLASSES })}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={copyUrl}
+          disabled={!subscriptionUrl}
+          className="min-h-11 shrink-0 px-2 font-semibold text-foreground disabled:opacity-50"
+        >
+          {copied ? t.copied : t.copyFeedUrl}
+        </button>
+      </div>
+      {subscriptionUrl ? (
+        <a
+          href={webcalUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => {
+            setSubscribed(true);
+            setBundleOpen(true);
+          }}
+          className={cn(subscribeBand, "bg-free text-sm text-free-foreground")}
+        >
+          {t.openCalendarApp}
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          className={cn(subscribeBand, "bg-busy text-sm text-muted-foreground")}
+        >
+          {t.openCalendarApp}
+        </span>
+      )}
+    </div>
+  );
+
   return (
-    <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className="mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6">
+    <PageLayout language={language} onLanguageChange={setLanguage} bottomDock={mobileDock}>
+      <div className="mx-auto w-full max-w-[1240px] px-3 py-3 sm:px-6 sm:py-5">
         <div className="mb-3.5">
-          <h1 className="text-2xl font-extrabold tracking-tight">{t.classCalendarTitle}</h1>
-          <p className="max-w-3xl text-muted-foreground">{t.classCalendarDescription}</p>
+          <h1 className="text-lg font-extrabold tracking-tight sm:text-2xl">
+            <span className="sm:hidden">{t.calendarTitleShort}</span>
+            <span className="hidden sm:inline">{t.classCalendarTitle}</span>
+          </h1>
+          <p className="max-w-3xl text-xs text-muted-foreground sm:text-base">
+            <span className="sm:hidden">{t.calendarDescriptionShort}</span>
+            <span className="hidden sm:inline">{t.classCalendarDescription}</span>
+          </p>
         </div>
 
         <div className="flex flex-wrap items-start gap-4">
           <section
             aria-label={t.chooseClasses}
-            className="min-w-0 flex-[999_1_560px] overflow-hidden rounded-2xl border bg-card"
+            className="min-w-0 flex-[999_1_560px] overflow-hidden sm:rounded-2xl sm:border sm:bg-card"
           >
-            <div className="border-b p-3">
+            <div className="border-b pb-2 sm:p-3">
               <div className="relative">
                 <label htmlFor="class-search" className="sr-only">
                   {t.chooseClasses}
                 </label>
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <input
                   id="class-search"
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder={t.classSearchPlaceholder}
+                  placeholder={t.classSearchShort}
                   className="h-[42px] w-full rounded-[10px] border border-input bg-background pl-9 pr-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
                 />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">{t.chooseClassesDescription}</p>
+              <p className="mt-2 hidden text-xs text-muted-foreground sm:block">
+                {t.chooseClassesDescription}
+              </p>
             </div>
 
             {loading ? (
-              <div role="status" className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground">
+              <div
+                role="status"
+                className="flex min-h-56 items-center justify-center gap-2 text-muted-foreground"
+              >
                 <Loader2 className="h-5 w-5 animate-spin" />
                 {t.loadingClasses}
               </div>
             ) : error ? (
-              <div role="alert" className="m-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+              <div
+                role="alert"
+                className="m-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-destructive"
+              >
                 <span>{error}</span>
                 <Button variant="outline" size="sm" onClick={() => setReloadKey((key) => key + 1)}>
                   {t.refresh}
@@ -232,19 +432,21 @@ export default function CalendarBuilder() {
                       <li
                         key={item.id}
                         className={cn(
-                          "flex items-center gap-3 border-b px-3 py-2.5",
-                          isSelected && "bg-free-tint"
+                          "flex items-center gap-2 border-b bg-card px-2 py-1.5 sm:gap-3 sm:px-3 sm:py-2.5",
+                          isSelected && "bg-free-tint",
                         )}
                       >
                         <span className="hidden min-w-[58px] shrink-0 rounded-[7px] bg-muted px-1.5 py-0.5 text-center text-[13px] font-bold tabular-nums sm:inline">
                           {item.code}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate">
-                            <strong>{item.title}</strong>{" "}
-                            <span className="text-muted-foreground">· {item.section}</span>
+                          <p className="text-[13px] leading-snug sm:text-base">
+                            <strong className="font-semibold">{item.title}</strong>{" "}
+                            <span className="whitespace-nowrap text-xs text-muted-foreground">
+                              · {item.section}
+                            </span>
                           </p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground sm:text-xs">
                             <span className="sm:hidden">
                               {item.code}
                               {classSummary(item) ? " · " : ""}
@@ -259,13 +461,15 @@ export default function CalendarBuilder() {
                           aria-label={`${isSelected ? t.removeClass : t.addClass}: ${item.title} ${item.section}`}
                           disabled={isDisabled}
                           className={cn(
-                            "inline-flex min-h-9 min-w-[72px] shrink-0 items-center justify-center gap-1 rounded-[10px] border px-3 text-sm font-bold disabled:opacity-50",
+                            "inline-flex min-h-11 min-w-[60px] shrink-0 items-center justify-center gap-1 rounded-lg border px-2 text-xs font-bold disabled:opacity-50 sm:min-w-[72px] sm:rounded-[10px] sm:px-3 sm:text-sm",
                             isSelected
                               ? "border-free bg-free text-free-foreground"
-                              : "border-input bg-card hover:bg-muted"
+                              : "border-input bg-card hover:bg-muted",
                           )}
                         >
-                          {isSelected && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
+                          {isSelected && (
+                            <Check className="hidden h-3.5 w-3.5 sm:block" aria-hidden="true" />
+                          )}
                           {isSelected ? t.addedClass : t.addClass}
                         </button>
                       </li>
@@ -289,160 +493,23 @@ export default function CalendarBuilder() {
             )}
           </section>
 
-          <aside className="flex min-w-0 flex-[1_1_360px] flex-col gap-4">
-            <section aria-label={t.yourBundle} className="rounded-2xl border bg-card px-4 py-3.5">
-              <div className="flex items-baseline justify-between">
-                <h2 className="text-base font-extrabold">{t.yourBundle}</h2>
-                <span className="text-muted-foreground tabular-nums">
-                  <strong className="text-foreground">{selected.length}</strong> / {MAX_CLASSES}
-                </span>
-              </div>
-              <div
-                role="progressbar"
-                aria-label={t.yourBundle}
-                aria-valuemin={0}
-                aria-valuemax={MAX_CLASSES}
-                aria-valuenow={selected.length}
-                className="mb-2.5 mt-2 h-1.5 overflow-hidden rounded-full bg-track"
-              >
-                <div className="h-full bg-free-bar" style={{ width: `${(selected.length / MAX_CLASSES) * 100}%` }} />
-              </div>
-              {selected.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t.emptyBundle}</p>
-              ) : (
-                <>
-                  <ul>
-                    {selected.map((item) => (
-                      <li key={item.id} className="flex min-h-[38px] items-center gap-2.5 border-t">
-                        <span className="text-xs font-bold text-muted-foreground tabular-nums">{item.code}</span>
-                        <span className="min-w-0 flex-1 truncate text-sm">
-                          {item.title} · {item.section}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => toggleClass(item)}
-                          aria-label={`${t.removeClass}: ${item.title} ${item.section}`}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                  <button
-                    type="button"
-                    onClick={copyListLink}
-                    className="mt-2 inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-free-soft-foreground hover:underline"
-                  >
-                    {copiedList ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-                    {copiedList ? t.copied : t.shareClassList}
-                  </button>
-                  <p className="text-xs text-muted-foreground">{t.shareClassListHelp}</p>
-                </>
-              )}
-            </section>
-
-            <section
-              aria-label={t.subscribeCalendar}
-              className={cn(
-                "overflow-hidden rounded-2xl border bg-card",
-                subscriptionUrl ? "border-free-border" : ""
-              )}
-            >
-              <div className="flex flex-col gap-2.5 px-4 py-3.5">
-                <h2 className="text-base font-extrabold">{t.subscribeCalendar}</h2>
-                <p className="text-sm text-muted-foreground">{t.subscribeDescription}</p>
-                {subscriptionUrl && (
-                  <div className="flex gap-1.5">
-                    <label htmlFor="feed-url" className="sr-only">
-                      {t.subscriptionUrlLabel}
-                    </label>
-                    <input
-                      id="feed-url"
-                      readOnly
-                      value={subscriptionUrl}
-                      onFocus={(event) => event.target.select()}
-                      className="h-[38px] min-w-0 flex-1 rounded-[10px] border border-input bg-background px-2.5 text-xs text-foreground"
-                    />
-                    <button
-                      type="button"
-                      onClick={copyUrl}
-                      className="inline-flex min-h-[38px] items-center gap-1 rounded-[10px] border border-input bg-card px-3 text-sm font-bold hover:bg-muted"
-                    >
-                      {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-                      {copied ? t.copied : t.copySubscriptionUrl}
-                    </button>
-                  </div>
-                )}
-                {subscribed && subscriptionUrl && (
-                  <p className="rounded-lg bg-free-tint p-2 text-xs text-free-soft-foreground">{t.webcalClicked}</p>
-                )}
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  {t.subscriptionHelp} {t.calendarCoverage}
-                </p>
-                {subscriptionUrl && (
-                  <>
-                    <p className="text-xs leading-relaxed text-muted-foreground">{t.resubscribeHint}</p>
-                    <a
-                      href={subscriptionUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground hover:underline"
-                    >
-                      {t.previewCalendarFeed}
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  </>
-                )}
-              </div>
-              {subscriptionUrl ? (
-                <a
-                  href={webcalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={() => setSubscribed(true)}
-                  className={cn(subscribeBand, "bg-free text-free-foreground")}
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarPlus className="h-4 w-4" aria-hidden="true" />
-                    {t.openCalendarApp}
-                  </span>
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </a>
-              ) : (
-                <span className={cn(subscribeBand, "bg-busy text-muted-foreground")}>{t.openCalendarApp}</span>
-              )}
-            </section>
+          <aside className="hidden min-w-0 flex-[1_1_360px] flex-col gap-4 lg:flex">
+            {bundleContent}
           </aside>
         </div>
 
-        <p className="mt-6 text-xs leading-relaxed text-muted-foreground">{t.disclaimer}</p>
-        {subscriptionUrl && (
-          <div className="sticky bottom-0 z-30 -mx-3 mt-4 border-t bg-card pb-[env(safe-area-inset-bottom)] sm:-mx-6 lg:hidden">
-            <div className="flex items-center justify-between gap-2 px-3 py-2 text-[13px] text-muted-foreground">
-              <span>{fill(t.classesSelected, { n: selected.length, max: MAX_CLASSES })}</span>
-              <button
-                type="button"
-                onClick={copyUrl}
-                className="min-h-8 rounded-lg border border-input bg-card px-2.5 font-semibold text-foreground"
-              >
-                {copied ? t.copied : t.copyFeedUrl}
-              </button>
-            </div>
-            <a
-              href={webcalUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setSubscribed(true)}
-              className={cn(subscribeBand, "bg-free text-free-foreground")}
-            >
-              {t.openCalendarApp}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
-          </div>
-        )}
+        <p className="mt-6 hidden text-xs leading-relaxed text-muted-foreground lg:block">
+          {t.disclaimer}
+        </p>
+        <BottomSheet
+          open={bundleOpen}
+          onClose={() => setBundleOpen(false)}
+          title={t.subscriptionDetails}
+          closeLabel={t.closePanel}
+        >
+          <div className="space-y-4">{bundleOpen && bundleContent}</div>
+        </BottomSheet>
       </div>
-
     </PageLayout>
   );
 }

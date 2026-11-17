@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { DayBar, LockedMark, SlotChips, StudyIcon } from "@/components/availability";
-import { ClassDetails, TimeCell } from "@/components/class-item";
+import { ClassDetails, TimedRow } from "@/components/class-item";
 import {
   formatDuration,
   formatMinutes,
@@ -45,11 +45,11 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
   const noClasses = day.isOpen && classCount === 0 && !day.windows.some((w) => w.kind === "study");
 
   return (
-    <section aria-label={formatDateFull(date, language)} className="min-w-0 flex-[999_1_560px] rounded-2xl border bg-card p-4 sm:px-[18px]">
+    <section aria-label={formatDateFull(date, language)} className="min-w-0 flex-1 sm:rounded-2xl sm:border sm:bg-card sm:p-4 sm:px-[18px]">
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="text-lg font-extrabold capitalize">{formatDateFull(date, language)}</h2>
+        <h2 className="text-sm font-bold capitalize sm:text-lg">{formatDateFull(date, language)}</h2>
         {!loading && day.isOpen && (
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground sm:text-sm">
             {classCount} {classCount === 1 ? t.classSingular : t.classPlural} ·{" "}
             {fill(t.freeTotal, { d: formatDuration(freeTotal) })}
           </span>
@@ -68,7 +68,7 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
       ) : !day.isOpen ? (
         <p className="rounded-xl bg-muted p-6 text-center text-muted-foreground">{t.buildingClosed}</p>
       ) : (
-        <div className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-2 sm:gap-3.5">
           <SlotChips windows={day.windows} status={status} studyLabel={t.studySession} />
           <DayBar
             windows={day.windows}
@@ -76,7 +76,8 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
             open={day.open}
             close={day.close}
             marker={now}
-            barClassName="h-[18px]"
+            className="compact-day-bar"
+            barClassName="h-2 sm:h-[18px]"
           />
           {noClasses && (
             <p className="flex items-center gap-2 text-sm text-warn-foreground">
@@ -88,14 +89,10 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
             {rows.map((row) => {
               if (row.kind === "class") {
                 return (
-                  <li
-                    key={`c-${row.event.start}-${row.event.code}-${row.event.class}`}
-                    className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 sm:grid-cols-[104px_minmax(0,1fr)]"
-                  >
-                    <TimeCell start={row.event.start} end={row.event.end} className="pt-2.5" />
-                    <div className="rounded-xl border bg-card px-3.5 py-2.5">
+                  <li key={`c-${row.event.start}-${row.event.code}-${row.event.class}`}>
+                    <TimedRow start={row.event.start} end={row.event.end}>
                       <ClassDetails event={row.event} language={language} showTeachers />
-                    </div>
+                    </TimedRow>
                   </li>
                 );
               }
@@ -105,16 +102,11 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
               return (
                 <li
                   key={`w-${window.start}-${window.kind}`}
-                  className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 sm:grid-cols-[104px_minmax(0,1fr)]"
                 >
-                  <TimeCell
+                  <TimedRow
                     start={formatMinutes(window.start)}
                     end={formatMinutes(window.end)}
-                    className={cn("pt-2.5", isStudy ? "text-study-soft-foreground" : "text-free-soft-foreground")}
-                  />
-                  <div
                     className={cn(
-                      "flex items-center gap-1.5 rounded-xl border px-3.5 py-2.5 font-bold",
                       isNow
                         ? isStudy
                           ? "border-study bg-study text-study-foreground"
@@ -124,11 +116,11 @@ export function RoomDayView({ day, date, now, loading, failed, language, t }: Ro
                           : "border-free-tint-border bg-free-tint text-free-soft-foreground"
                     )}
                   >
-                    {isStudy && <StudyIcon className="h-4 w-4" label={t.studySession} />}
-                    {fill(isNow ? t.freeNowDuration : t.freeDuration, {
-                      d: formatDuration(window.end - window.start),
-                    })}
-                  </div>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold sm:text-sm">
+                      {isStudy && <StudyIcon className="h-4 w-4" label={t.studySession} />}
+                      {fill(isNow ? t.freeNowDuration : t.freeDuration, { d: formatDuration(window.end - window.start) })}
+                    </span>
+                  </TimedRow>
                 </li>
               );
             })}

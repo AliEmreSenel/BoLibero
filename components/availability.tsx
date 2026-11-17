@@ -50,12 +50,12 @@ export function SlotChips({
 }) {
   if (windows.length === 0) return null;
   return (
-    <ul className={cn("flex flex-wrap gap-1.5", className)}>
+    <ul className={cn("flex flex-wrap gap-1 sm:gap-1.5", className)}>
       {windows.map((window) => (
         <li
           key={`${window.start}-${window.kind}`}
           className={cn(
-            "inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-semibold tabular-nums",
+            "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] sm:rounded-md sm:px-2 sm:text-xs font-semibold tabular-nums",
             chipClass(window, status)
           )}
         >
@@ -117,7 +117,7 @@ export function DayBar({
         )}
       </div>
       {showLabels && (
-        <div className="relative mt-1 h-3.5 text-[11px] text-muted-foreground tabular-nums">
+        <div className="day-bar-labels relative mt-1 h-3.5 text-[11px] text-muted-foreground tabular-nums">
           {labels.map((minute, index) => (
             <span
               key={minute}

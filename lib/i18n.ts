@@ -224,6 +224,26 @@ export const translations = {
       "Questions, data removal requests and bug reports: open an issue on our GitHub repository.",
 
 
+    // Responsive controls
+    filters: "Filters",
+    closePanel: "Close",
+    showRoomResults: "Show {n} rooms",
+    removeFilter: "Remove filter: {name}",
+    studyOnlyShort: "Study only",
+    roomDetailTitle: "Room",
+    professorDetailTitle: "Professor",
+    weekView: "Week",
+    monthView: "Month",
+    previousWeek: "Previous week",
+    nextWeek: "Next week",
+    calendarTitleShort: "Class calendar",
+    calendarDescriptionShort: "Pick classes, then subscribe once. No account.",
+    classSearchShort: "Course, code or class no.",
+    scheduleSummary: "Next 7 days · {n} classes",
+    remindersOnShort: "On",
+    remindersOffShort: "Remind me",
+    subscriptionDetails: "Selection & calendar help",
+
     // Redesign (availability-first UI)
     roomsNav: "Rooms",
     allBuildingsLabel: "All buildings",
@@ -510,6 +530,26 @@ export const translations = {
     privacyContact:
       "Domande, richieste di cancellazione dati e segnalazioni: apri una issue sul nostro repository GitHub.",
 
+
+    // Responsive controls
+    filters: "Filtri",
+    closePanel: "Chiudi",
+    showRoomResults: "Mostra {n} aule",
+    removeFilter: "Rimuovi filtro: {name}",
+    studyOnlyShort: "Solo studio",
+    roomDetailTitle: "Aula",
+    professorDetailTitle: "Professore",
+    weekView: "Settimana",
+    monthView: "Mese",
+    previousWeek: "Settimana precedente",
+    nextWeek: "Settimana successiva",
+    calendarTitleShort: "Calendario lezioni",
+    calendarDescriptionShort: "Scegli le lezioni e iscriviti. Senza account.",
+    classSearchShort: "Corso, codice o classe",
+    scheduleSummary: "Prossimi 7 giorni · {n} lezioni",
+    remindersOnShort: "Attivi",
+    remindersOffShort: "Avvisami",
+    subscriptionDetails: "Selezione e aiuto calendario",
 
     // Redesign (availability-first UI)
     roomsNav: "Aule",

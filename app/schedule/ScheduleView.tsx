@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Bell, CalendarPlus, Loader2 } from "lucide-react";
+import { ArrowRight, Bell, CalendarPlus, Loader2, Pencil } from "lucide-react";
 import { PageLayout } from "@/components/page-layout";
-import { ClassDetails, TimeCell, eventCourseTitle, roomHref, roomLabel } from "@/components/class-item";
+import { ClassDetails, TimeCell, eventCourseTitle } from "@/components/class-item";
 import { Button } from "@/components/ui/button";
 import type { ClientEvent } from "@/lib/event-matching";
 import { romeDateKey, romeMinutes, normalizeTime, toMinutes } from "@/lib/time";
@@ -18,9 +18,9 @@ import {
 } from "@/lib/settings";
 import { fill, formatDateFull, useTranslation } from "@/lib/i18n";
 import { formatDuration, formatMinutes } from "@/lib/availability";
-import { isLinkableRoomName } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { enUS, it } from "date-fns/locale";
 
 interface BundleClass {
   id: string;
@@ -44,9 +44,7 @@ const DAYS_AHEAD = 7;
 const notifiedIds = (): string[] => {
   try {
     const saved = JSON.parse(safeGetItem(NOTIFIED_EVENTS_KEY) || "[]");
-    return Array.isArray(saved)
-      ? saved.filter((id): id is string => typeof id === "string")
-      : [];
+    return Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
   } catch {
     return [];
   }
@@ -97,11 +95,11 @@ export default function ScheduleView() {
         classes.map(async (item) => {
           const response = await fetch(
             `/api/events?class=${encodeURIComponent(item.id)}&from=${fromKey}&to=${toKey}`,
-            { signal: controller.signal }
+            { signal: controller.signal },
           );
           if (!response.ok) throw new Error("events request failed");
           return (await response.json()).events as ClientEvent[];
-        })
+        }),
       );
       const merged: ClientEvent[] = [];
       // A course's exams come back once per selected section of that course.
@@ -118,9 +116,7 @@ export default function ScheduleView() {
         } else if (result.reason?.name !== "AbortError") failed = true;
       }
       if (controller.signal.aborted) return;
-      merged.sort(
-        (a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start)
-      );
+      merged.sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
 
       // Room-change detection: diff the bundle's future events against the
       // last-seen snapshot (identity excludes room, as in the ICS UID).
@@ -216,7 +212,7 @@ export default function ScheduleView() {
 
   const now = romeMinutes();
   const changedIds = new Set(
-    roomChanges.map((change) => `${change.date}|${change.start}|${change.className}`)
+    roomChanges.map((change) => `${change.date}|${change.start}|${change.className}`),
   );
   const minutesOf = (time: string) => {
     const normalized = normalizeTime(time);
@@ -225,35 +221,50 @@ export default function ScheduleView() {
 
   return (
     <PageLayout language={language} onLanguageChange={setLanguage}>
-      <div className="mx-auto w-full max-w-[960px] px-3 py-5 sm:px-6">
-        <div className="mb-3.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-2.5">
+      <div className="mx-auto w-full max-w-[960px] px-3 py-3 sm:px-6 sm:py-5">
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-2 sm:mb-3.5 sm:items-end">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">{t.myScheduleTitle}</h1>
-            <p className="text-muted-foreground">{t.myScheduleDescription}</p>
+            <h1 className="text-lg font-extrabold tracking-tight sm:text-2xl">
+              {t.myScheduleTitle}
+            </h1>
+            <p className="text-xs text-muted-foreground sm:text-base">
+              <span className="sm:hidden">{fill(t.scheduleSummary, { n: classes.length })}</span>
+              <span className="hidden sm:inline">{t.myScheduleDescription}</span>
+            </p>
           </div>
           {classes.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1 sm:flex-wrap sm:gap-2">
               {canNotify && (
                 <button
                   type="button"
                   aria-pressed={notifyOn}
+                  aria-label={notifyOn ? t.remindersOn : t.enableReminders}
+                  title={notifyOn ? t.remindersOn : t.enableReminders}
                   onClick={notifyOn ? () => setNotifyOn(false) : enableReminders}
                   className={cn(
-                    "inline-flex min-h-[38px] items-center gap-1.5 rounded-[10px] border px-3 text-sm font-semibold",
+                    "inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-2 text-xs font-semibold sm:rounded-[10px] sm:px-3 sm:text-sm",
                     notifyOn
                       ? "border-free-bar-muted bg-free-soft text-free-soft-foreground"
-                      : "border-input bg-card hover:bg-muted"
+                      : "border-input bg-card hover:bg-muted",
                   )}
                 >
                   <Bell className="h-4 w-4" aria-hidden="true" />
-                  {notifyOn ? t.remindersOn : t.enableReminders}
+                  <span className="sm:hidden">
+                    {notifyOn ? t.remindersOnShort : t.remindersOffShort}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {notifyOn ? t.remindersOn : t.enableReminders}
+                  </span>
                 </button>
               )}
               <Link
                 href="/calendar"
-                className="inline-flex min-h-[38px] items-center rounded-[10px] border border-input bg-card px-3 text-sm font-semibold hover:bg-muted"
+                aria-label={t.editClasses}
+                title={t.editClasses}
+                className="inline-flex h-11 min-w-11 items-center justify-center rounded-lg text-sm font-semibold hover:bg-muted sm:rounded-[10px] sm:border sm:border-input sm:bg-card sm:px-3"
               >
-                {t.editClasses}
+                <Pencil className="h-4 w-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline">{t.editClasses}</span>
               </Link>
             </div>
           )}
@@ -270,19 +281,28 @@ export default function ScheduleView() {
             </Button>
           </div>
         ) : loading ? (
-          <div role="status" className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+          <div
+            role="status"
+            className="flex items-center justify-center gap-2 py-16 text-muted-foreground"
+          >
             <Loader2 className="h-5 w-5 animate-spin" />
             {t.loading}
           </div>
         ) : (
-          <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-2.5 sm:gap-3.5">
             {error && (
-              <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+              <p
+                role="alert"
+                className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive"
+              >
                 {t.loadEventsError}
               </p>
             )}
             {roomChanges.length > 0 && (
-              <div role="status" className="flex items-start gap-2.5 rounded-xl border border-notice-border bg-notice px-3.5 py-2.5 text-notice-foreground">
+              <div
+                role="status"
+                className="flex items-start gap-2.5 rounded-xl border border-notice-border bg-notice px-3.5 py-2.5 text-notice-foreground"
+              >
                 <span
                   aria-hidden="true"
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] border-[1.5px] border-warn-border bg-warn font-extrabold text-warn-foreground"
@@ -308,32 +328,41 @@ export default function ScheduleView() {
               </p>
             )}
             {days.map((day) => {
-              const sorted = [...day.events].sort((a, b) => minutesOf(a.start) - minutesOf(b.start));
-              const nextIndex = day.isToday ? sorted.findIndex((event) => minutesOf(event.start) > now) : -1;
+              const sorted = [...day.events].sort(
+                (a, b) => minutesOf(a.start) - minutesOf(b.start),
+              );
+              const nextIndex = day.isToday
+                ? sorted.findIndex((event) => minutesOf(event.start) > now)
+                : -1;
               return (
                 <section
                   key={day.key}
                   aria-label={formatDateFull(day.date, language)}
-                  className="overflow-hidden rounded-2xl border bg-card"
+                  className="overflow-hidden rounded-xl border bg-card sm:rounded-2xl"
                 >
                   <div
                     className={cn(
-                      "flex items-baseline justify-between border-b px-4 py-2.5",
-                      day.isToday ? "bg-free-tint" : "bg-muted/50"
+                      "flex items-baseline justify-between gap-2 border-b px-2.5 py-2 sm:px-4 sm:py-2.5",
+                      day.isToday ? "bg-free-tint" : "bg-muted/50",
                     )}
                   >
-                    <h2 className="text-[15px] font-extrabold capitalize">
+                    <h2 className="text-xs font-bold capitalize sm:text-[15px]">
                       {day.isToday ? `${t.today}, ` : ""}
-                      {formatDateFull(day.date, language)}
+                      <span className="sm:hidden">
+                        {format(day.date, "EEE d", { locale: language === "it" ? it : enUS })}
+                      </span>
+                      <span className="hidden sm:inline">{formatDateFull(day.date, language)}</span>
                     </h2>
                     {sorted.length > 0 && (
-                      <span className="text-[13px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground sm:text-[13px]">
                         {sorted.length} {sorted.length === 1 ? t.classSingular : t.classPlural}
                       </span>
                     )}
                   </div>
                   {sorted.length === 0 && (
-                    <p className="px-4 py-3 text-muted-foreground">{t.noClasses}</p>
+                    <p className="px-2.5 py-2.5 text-xs text-muted-foreground sm:px-4 sm:py-3 sm:text-base">
+                      {t.noClasses}
+                    </p>
                   )}
                   {sorted.map((event, index) => {
                     const start = minutesOf(event.start);
@@ -344,14 +373,13 @@ export default function ScheduleView() {
                     const showGap =
                       day.isToday && gapStart !== null && start - gapStart >= 30 && start > now;
                     const inGap = showGap && gapStart !== null && gapStart <= now;
-                    const room = event.rooms.find((candidate) => isLinkableRoomName(candidate.roomName));
                     const moved = changedIds.has(`${event.date}|${event.start}|${event.class}`);
                     return (
                       <div key={`${event.date}-${event.start}-${event.class}-${index}`}>
                         {showGap && gapStart !== null && (
                           <Link
                             href="/"
-                            className="flex min-h-10 items-center justify-between gap-2.5 border-b bg-free-tint px-4 text-[13px] text-free-soft-foreground"
+                            className="flex min-h-11 items-center justify-between gap-2.5 border-b bg-free-tint px-2.5 py-2 text-xs sm:px-4 sm:text-[13px] text-free-soft-foreground"
                           >
                             <span>
                               <strong>
@@ -366,8 +394,8 @@ export default function ScheduleView() {
                         )}
                         <div
                           className={cn(
-                            "grid grid-cols-[52px_minmax(0,1fr)] items-center gap-3 border-b px-4 py-3 sm:grid-cols-[104px_minmax(0,1fr)_auto]",
-                            past && "opacity-55"
+                            "grid grid-cols-[44px_minmax(0,1fr)] items-start gap-2 border-b px-2.5 py-2.5 sm:grid-cols-[104px_minmax(0,1fr)] sm:gap-3 sm:px-4 sm:py-3",
+                            past && "opacity-55",
                           )}
                         >
                           <TimeCell start={event.start} end={event.end} />
@@ -375,7 +403,7 @@ export default function ScheduleView() {
                             event={event}
                             language={language}
                             showTeachers
-                            showRooms={!room}
+                            showRooms
                             badges={
                               moved ? (
                                 <span className="rounded-full bg-notice px-2 text-[11px] font-bold text-notice-foreground">
@@ -384,18 +412,9 @@ export default function ScheduleView() {
                               ) : undefined
                             }
                           />
-                          {room && (
-                            <Link
-                              href={roomHref(room.building, room.roomName)}
-                              className="col-start-2 inline-flex min-h-[34px] items-center gap-1.5 justify-self-start whitespace-nowrap rounded-[9px] border px-2.5 text-sm font-semibold hover:bg-muted sm:col-start-auto sm:justify-self-end"
-                            >
-                              {roomLabel(room)}
-                              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                            </Link>
-                          )}
                         </div>
                         {index === nextIndex && (
-                          <div className="flex min-h-10 items-center border-b bg-free px-4 text-[13px] text-free-foreground">
+                          <div className="flex min-h-11 items-center border-b bg-free px-2.5 py-2 text-xs sm:px-4 sm:text-[13px] text-free-foreground">
                             <strong>{fill(t.nextIn, { d: formatDuration(start - now) })}</strong>
                           </div>
                         )}
