@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { startOfMonth, endOfMonth, addMonths, subMonths, format, parseISO, isSameMonth } from "date-fns";
 import { it, enUS } from "date-fns/locale";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { ArrowRight, Link2, Loader2, RefreshCw } from "lucide-react";
 import type { ClientEvent } from "@/lib/event-matching";
 import { PageLayout } from "@/components/page-layout";
@@ -18,16 +18,9 @@ import { ScheduleFetcher } from "@/lib/schedule-fetcher";
 import { buildWindows, formatDuration, formatMinutes, roomStatusAt, type RoomStatus } from "@/lib/availability";
 import { normalizeTime, romeDateKey, romeMinutes, toMinutes } from "@/lib/time";
 import { cn, decodeRouteParam } from "@/lib/utils";
+import { professorInitials, professorsHref } from "@/lib/professor-search";
 
 const fetcher = ScheduleFetcher.getInstance();
-
-const initials = (name: string) =>
-  name
-    .split(/[\s.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 
 const startMinutes = (event: ClientEvent) => {
   const time = normalizeTime(event.start);
@@ -36,6 +29,7 @@ const startMinutes = (event: ClientEvent) => {
 
 export default function ProfessorCalendar() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawName = Array.isArray(params.name) ? params.name[0] : (params.name as string);
   const name = decodeRouteParam(rawName);
 
@@ -202,10 +196,10 @@ export default function ProfessorCalendar() {
     <PageLayout language={language} onLanguageChange={setLanguage}>
       <div className="mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6">
         <DetailHeader
-          backHref="/professors"
+          backHref={professorsHref(searchParams.get("q") ?? "")}
           backLabel={t.allProfessors}
           title={name}
-          avatar={initials(name)}
+          avatar={professorInitials(name)}
           subtitle={
             loading ? undefined : [subjects, fill(t.classesThisMonth, { n: profEvents.length })]
               .filter(Boolean)
