@@ -46,9 +46,8 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
   return (
     <header className={cn("border-b bg-card pt-[env(safe-area-inset-top)]", isDetail && "hidden sm:block")}>
       <div className="mx-auto flex min-h-12 w-full max-w-[1240px] flex-wrap items-center px-2 sm:min-h-[60px] sm:gap-3 sm:px-6 lg:gap-6">
-        <Link href="/" aria-label={t.appName} className="flex min-h-11 shrink-0 items-center gap-1.5 text-sm font-extrabold hover:opacity-80 sm:gap-2.5 sm:text-lg">
-          <BookOpen className="hidden h-7 w-7 sm:block" aria-hidden="true" />
-          <span className="h-2 w-2 rounded-full bg-free-bar shadow-[0_0_0_3px_var(--free-soft)] sm:hidden" aria-hidden="true" />
+        <Link href="/" aria-label={t.appName} className="flex min-h-11 shrink-0 items-center gap-1.5 text-xs font-extrabold hover:opacity-80 min-[360px]:gap-2.5 min-[360px]:text-lg">
+          <BookOpen className="h-5 w-5 shrink-0 min-[360px]:h-7 min-[360px]:w-7" aria-hidden="true" />
           <span>{t.appName}</span>
         </Link>
         <nav aria-label={t.navigation} className="ml-auto flex items-center sm:ml-0 sm:flex-1">
