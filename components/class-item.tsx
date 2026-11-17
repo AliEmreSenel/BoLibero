@@ -39,10 +39,9 @@ export function ClassDetails({
   const title = descriptionLines[0] || event.class || typeLabel;
   const meta: ReactNode[] = [];
   // Section ("Cl.31") and the remaining description lines (programme, notes).
-  const details = [
-    descriptionLines[0] ? event.class : "",
-    ...descriptionLines.slice(1),
-  ].filter(Boolean);
+  const details = [descriptionLines[0] ? event.class : "", ...descriptionLines.slice(1)].filter(
+    Boolean,
+  );
   if (details.length > 0) {
     meta.push(<span key="details">{details.join(" · ")}</span>);
   }
@@ -52,11 +51,11 @@ export function ClassDetails({
         <Link
           key={`t-${teacher}`}
           href={`/professor/${encodeURIComponent(teacher)}`}
-          className="font-semibold text-free-soft-foreground hover:underline"
+          className="font-semibold text-free-soft-foreground underline underline-offset-2"
         >
           {teacher}
-        </Link>
-      )
+        </Link>,
+      ),
     );
   }
   if (showRooms) {
@@ -66,30 +65,34 @@ export function ClassDetails({
           <Link
             key={`r-${index}`}
             href={roomHref(room.building, room.roomName)}
-            className="font-semibold text-foreground hover:underline"
+            className="font-semibold text-foreground underline underline-offset-2"
           >
             {roomLabel(room)}
           </Link>
         ) : (
           <span key={`r-${index}`}>{room.roomName}</span>
-        )
-      )
+        ),
+      ),
     );
   }
   return (
     <div className="min-w-0">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <strong className="text-[15px]">{title}</strong>
+      <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 sm:gap-x-2 sm:gap-y-1">
+        <strong className="break-words text-[13px] leading-snug sm:text-[15px]">{title}</strong>
         {typeLabel && title !== typeLabel && (
-          <span className="rounded-full border px-2 text-[11px] font-semibold text-busy-foreground">{typeLabel}</span>
+          <span className="text-[10px] text-muted-foreground sm:rounded-full sm:border sm:px-2 sm:text-[11px] sm:font-semibold sm:text-busy-foreground">
+            {typeLabel}
+          </span>
         )}
         {event.code && (
-          <span className="rounded-full bg-muted px-2 text-[11px] font-semibold text-busy-foreground">{event.code}</span>
+          <span className="text-[10px] text-muted-foreground sm:rounded-full sm:bg-muted sm:px-2 sm:text-[11px] sm:font-semibold sm:text-busy-foreground">
+            {event.code}
+          </span>
         )}
         {badges}
       </div>
       {meta.length > 0 && (
-        <div className="mt-0.5 text-[13px] text-muted-foreground">
+        <div className="mt-0.5 break-words text-[11px] leading-snug text-muted-foreground sm:text-[13px]">
           {meta.map((item, index) => (
             <span key={index}>
               {index > 0 && " · "}
@@ -103,17 +106,50 @@ export function ClassDetails({
 }
 
 /** "08:30–10:00" in a fixed-width column on wide screens, stacked on phones. */
-export function TimeCell({ start, end, className }: { start: string; end: string; className?: string }) {
+export function TimeCell({
+  start,
+  end,
+  className,
+}: {
+  start: string;
+  end: string;
+  className?: string;
+}) {
   return (
-    <span className={cn("font-bold tabular-nums", className)}>
+    <span className={cn("text-xs leading-snug font-semibold tabular-nums sm:text-sm", className)}>
       <span className="sm:hidden">
         {start}
         <br />
-        <span className="font-medium text-muted-foreground">{end}</span>
+        <span className="font-normal opacity-75">{end}</span>
       </span>
       <span className="hidden sm:inline">
         {start}–{end}
       </span>
     </span>
+  );
+}
+
+/** Shared timeline row, including the time on both phone and desktop layouts. */
+export function TimedRow({
+  start,
+  end,
+  children,
+  footer,
+  className,
+}: {
+  start: string;
+  end: string;
+  children: ReactNode;
+  footer?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("overflow-hidden rounded-lg border bg-card sm:rounded-xl", className)}>
+      <div className="grid grid-cols-[44px_minmax(0,1fr)] items-start gap-2 px-2.5 py-2 sm:grid-cols-[104px_minmax(0,1fr)] sm:gap-3 sm:px-3.5 sm:py-2.5">
+        <TimeCell start={start} end={end} />
+        <div className="min-w-0 self-center">{children}</div>
+      </div>
+      {footer}
+    </div>
   );
 }

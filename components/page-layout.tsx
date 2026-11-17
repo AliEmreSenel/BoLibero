@@ -9,12 +9,14 @@ interface PageLayoutProps {
   language: Language;
   onLanguageChange: (language: Language) => void;
   children: ReactNode;
+  bottomDock?: ReactNode;
 }
 
 export function PageLayout({
   language,
   onLanguageChange,
   children,
+  bottomDock,
 }: PageLayoutProps) {
   return (
     <div className="relative min-h-dvh flex flex-col">
@@ -27,6 +29,8 @@ export function PageLayout({
       <Navbar language={language} onLanguageChange={onLanguageChange} />
       <main id="main" className="flex-1">{children}</main>
       <Footer language={language} />
+      {bottomDock && <div aria-hidden="true" className="h-[calc(7rem+env(safe-area-inset-bottom))] shrink-0 lg:hidden" />}
+      {bottomDock}
     </div>
   );
 }

@@ -444,7 +444,7 @@ export default function BSpace() {
       : formatMinutes(atTime ?? SCRUB_MIN),
   });
 
-  const container = "mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6";
+  const container = "mx-auto w-full max-w-[1240px] px-3 py-3 sm:px-6 sm:py-5";
 
   if (isInitialLoading) {
     return (
@@ -554,7 +554,7 @@ export default function BSpace() {
             {t.noDataForDate}
           </div>
         ) : (
-          <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))]">
+          <div className="grid gap-2.5 sm:gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))]">
             {filteredRooms.map((view) => (
               <RoomCard
                 key={view.key}

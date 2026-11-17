@@ -183,3 +183,13 @@
 .dark .shadow-lg {
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
 }
+
+@media (max-width: 639px) {
+  .compact-day-bar .day-bar-labels { display: none; }
+}
+
+@layer base {
+  button, a, input, select, summary {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}

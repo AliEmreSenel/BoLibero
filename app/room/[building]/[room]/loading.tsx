@@ -5,7 +5,7 @@ import {
 
 export default function RoomLoading() {
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-3 py-5 sm:px-6">
+    <div className="mx-auto w-full max-w-[1240px] px-3 pb-5 sm:px-6 sm:pt-5">
       <DetailHeaderSkeleton />
       <CalendarViewSkeleton />
     </div>

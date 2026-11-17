@@ -10,8 +10,8 @@ function Skeleton({ className = "" }: SkeletonProps) {
 
 export function RoomCardSkeleton() {
   return (
-    <div className="flex min-h-[188px] flex-col overflow-hidden rounded-2xl border bg-card">
-      <div className="flex flex-1 flex-col gap-3 p-4">
+    <div className="flex min-h-[150px] sm:min-h-[188px] flex-col overflow-hidden rounded-2xl border bg-card">
+      <div className="flex flex-1 flex-col gap-2 p-3 sm:gap-3 sm:p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1.5">
             <Skeleton className="h-6 w-24" />
@@ -25,25 +25,19 @@ export function RoomCardSkeleton() {
         </div>
         <Skeleton className="h-4 w-full" />
       </div>
-      <Skeleton className="h-12 w-full rounded-none" />
+      <Skeleton className="h-11 w-full rounded-none sm:h-12" />
     </div>
   );
 }
 
 export function SearchFiltersSkeleton() {
   return (
-    <div className="mb-4 rounded-2xl border bg-card">
-      <div className="flex flex-wrap gap-2.5 p-3">
-        <Skeleton className="h-[42px] min-w-[200px] flex-[3_1_260px]" />
-        <Skeleton className="h-[42px] min-w-[180px] flex-[1_1_230px]" />
-        <Skeleton className="h-[42px] w-24" />
-      </div>
-      <div className="flex flex-wrap gap-2 border-t px-3 py-2.5">
-        <Skeleton className="h-9 w-64" />
-        <Skeleton className="h-9 w-28 rounded-full" />
-        <Skeleton className="h-9 w-24 rounded-full" />
-        <Skeleton className="h-9 w-32 rounded-full" />
-      </div>
+    <div className="mb-4 space-y-2 sm:rounded-2xl sm:border sm:bg-card sm:p-3">
+      <Skeleton className="h-11 w-full" />
+      <div className="flex gap-2"><Skeleton className="h-11 flex-1 rounded-full" /><Skeleton className="h-11 w-24 rounded-lg" /></div>
+      <div className="flex flex-wrap gap-2"><Skeleton className="h-11 w-24 rounded-full" /><Skeleton className="h-11 w-24 rounded-full" /><Skeleton className="h-11 w-24 rounded-full" /></div>
+      <Skeleton className="hidden h-16 w-full sm:block" />
+      <Skeleton className="h-4 w-56" />
     </div>
   );
 }
@@ -53,7 +47,7 @@ export function PageHeaderSkeleton() {
     <div className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
       <div className="space-y-2">
         <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-72" />
+        <Skeleton className="hidden h-4 w-72 sm:block" />
       </div>
       <Skeleton className="h-12 w-52 rounded-xl" />
     </div>
@@ -72,12 +66,12 @@ export function RoomGridSkeleton({ count = 6 }: { count?: number }) {
 
 export function CalendarViewSkeleton() {
   return (
-    <div className="flex flex-wrap items-start gap-4">
-      <div className="flex-[1_1_300px] rounded-2xl border bg-card p-3.5">
+    <div className="grid items-start gap-3 sm:gap-4 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="rounded-xl border bg-card p-3.5">
         <Skeleton className="mx-auto mb-3 h-6 w-36" />
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: 35 }).map((_, index) => (
-            <Skeleton key={index} className="h-9 rounded-lg" />
+            <Skeleton key={index} className={`h-11 rounded-lg ${index > 6 ? "hidden lg:block" : ""}`} />
           ))}
         </div>
       </div>
@@ -101,7 +95,7 @@ export function DetailHeaderSkeleton() {
           <Skeleton className="h-7 w-40" />
           <Skeleton className="h-4 w-56" />
         </div>
-        <Skeleton className="h-12 w-full rounded-none" />
+        <Skeleton className="h-11 w-full rounded-none sm:h-12" />
       </div>
     </div>
   );

@@ -77,7 +77,7 @@ function Band({
   }
 
   return (
-    <span className={cn("flex min-h-12 items-center justify-between gap-3 px-4 text-sm", tone)}>
+    <span className={cn("flex min-h-11 items-center justify-between gap-2 px-3 py-2 text-xs sm:min-h-12 sm:gap-3 sm:px-4 sm:text-sm", tone)}>
       <span className="flex min-w-0 items-center gap-1.5">
         {study && <StudyIcon className="h-4 w-4" label={t.studySession} />}
         <span>
@@ -86,7 +86,7 @@ function Band({
         </span>
       </span>
       <span className="inline-flex shrink-0 items-center gap-1 font-semibold">
-        {t.moreInfo}
+        <span className="hidden sm:inline">{t.moreInfo}</span>
         <ArrowRight className="h-4 w-4" aria-hidden="true" />
       </span>
     </span>
@@ -119,14 +119,14 @@ export const RoomCard = memo(function RoomCard(props: RoomCardProps) {
         : "border-border";
 
   return (
-    <article className={cn("flex flex-col overflow-hidden rounded-2xl border bg-card", border)}>
-      <div className="flex flex-1 flex-col gap-3 p-4">
+    <article className={cn("flex flex-col overflow-hidden rounded-xl border bg-card sm:rounded-2xl", border)}>
+      <div className="flex flex-1 flex-col gap-2 px-3 py-2.5 sm:gap-3 sm:p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h2 className="truncate text-xl font-bold" title={room}>
+            <h2 className="truncate text-base font-bold sm:text-xl" title={room}>
               {room}
             </h2>
-            <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground sm:text-[13px]">
               {buildingDisplayName}
               {hasStudySession && (
                 <span title={t.studySessionToday} className="inline-flex text-study">
@@ -157,12 +157,13 @@ export const RoomCard = memo(function RoomCard(props: RoomCardProps) {
         {isOpen && (
           <>
             <SlotChips windows={windows} status={status} studyLabel={t.studySession} />
-            <DayBar windows={windows} status={status} open={open} close={close} marker={marker} />
+            <DayBar windows={windows} status={status} open={open} close={close} marker={marker} className="compact-day-bar" barClassName="h-2 sm:h-4" />
           </>
         )}
       </div>
       <Link
         href={`/room/${encodeURIComponent(building)}/${encodeURIComponent(room)}`}
+        aria-label={`${t.moreInfo}: ${room}`}
         className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <Band {...props} />

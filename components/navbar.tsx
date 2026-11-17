@@ -14,6 +14,7 @@ interface NavbarProps {
 export function Navbar({ language, onLanguageChange }: NavbarProps) {
   const t = useTranslation(language);
   const pathname = usePathname();
+  const isDetail = pathname.startsWith("/room/") || pathname.startsWith("/professor/");
 
   const links = [
     {
@@ -43,11 +44,11 @@ export function Navbar({ language, onLanguageChange }: NavbarProps) {
   ];
 
   return (
-    <header className="border-b bg-card pt-[env(safe-area-inset-top)]">
-      <div className="mx-auto flex min-h-14 w-full max-w-[1240px] flex-wrap items-center gap-1 px-3 min-[400px]:gap-2 sm:min-h-[60px] sm:gap-3 sm:px-6 lg:gap-6">
-        <Link href="/" aria-label={t.appName} className="flex shrink-0 items-center gap-1.5 text-base font-extrabold hover:opacity-80 min-[400px]:gap-2.5 min-[400px]:text-lg">
-          <BookOpen className="h-7 w-7" aria-hidden="true" />
-          <span className="hidden min-[360px]:inline">{t.appName}</span>
+    <header className={cn("border-b bg-card pt-[env(safe-area-inset-top)]", isDetail && "hidden sm:block")}>
+      <div className="mx-auto flex min-h-12 w-full max-w-[1240px] flex-wrap items-center px-2 sm:min-h-[60px] sm:gap-3 sm:px-6 lg:gap-6">
+        <Link href="/" aria-label={t.appName} className="flex min-h-11 shrink-0 items-center gap-1.5 text-xs font-extrabold hover:opacity-80 min-[360px]:gap-2.5 min-[360px]:text-lg">
+          <BookOpen className="h-5 w-5 shrink-0 min-[360px]:h-7 min-[360px]:w-7" aria-hidden="true" />
+          <span>{t.appName}</span>
         </Link>
         <nav aria-label={t.navigation} className="ml-auto flex items-center sm:ml-0 sm:flex-1">
           {links.map(({ href, label, icon: Icon, active }) => (
