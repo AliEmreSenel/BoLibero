@@ -231,6 +231,9 @@ export const BUILDINGS = Object.fromEntries(
 // advertised cap and the enforced cap can never diverge.
 export const MAX_CLASSES = 20;
 
+// Shared by the professor loader and the search page's coverage description.
+export const PROFESSOR_WINDOW_DAYS = 91;
+
 /**
  * Shared whole-entity normalization for scraped names (rooms, teachers):
  * collapse whitespace, trim, casefold. Matching must use this rule

@@ -2,8 +2,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { fetchBocconiEvents, SUBSCRIPTION_REVALIDATE_SECONDS } from "./bocconi-calendar";
+import { PROFESSOR_WINDOW_DAYS } from "./constants";
 
-const PROFESSOR_WINDOW_DAYS = 91;
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
 const WEEK_ANCHOR_MS = Date.UTC(2024, 0, 1);

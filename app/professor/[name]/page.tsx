@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { decodeRouteParam } from "@/lib/utils";
 import { notFound } from "next/navigation";
 import ProfessorCalendar from "./ProfessorCalendar";
+import ProfessorLoading from "./loading";
 import { SITE_URL } from "@/lib/site";
 import { fetchProfessorNames } from "@/lib/professors";
 
@@ -56,5 +58,9 @@ export default async function ProfessorPage({ params }: Props) {
     // This component is a SERVER component (no 'use client')
     const { name } = await params;
     await resolveProfessor(name);
-    return <ProfessorCalendar />;
+    return (
+        <Suspense fallback={<ProfessorLoading />}>
+            <ProfessorCalendar />
+        </Suspense>
+    );
 }

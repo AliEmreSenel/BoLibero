@@ -17,6 +17,7 @@ BoLibero reads the public Bocconi timetable ([didattica.unibocconi.it](https://d
   - building, search, and a free-from/to time range
 - **Time slider:** see which rooms are free at any time of the day, not just now.
 - **Room and professor pages:** a month calendar and a day view of classes and free gaps.
+- **Professor search:** find published names regardless of accents, punctuation or word order, then open their class schedule. Search links keep your query when you return from a schedule. Results cover the 91-day timetable window starting this week.
 - **Class calendar:** pick your classes and subscribe to a calendar feed (`.ics`) that stays up to date in Google, Apple or Outlook Calendar. Each class's exams are included.
 - **My Schedule:** your next 7 days, with room-change alerts and optional class reminders.
 - **Exams tracker:** your own exams and deadlines, exportable to your calendar.

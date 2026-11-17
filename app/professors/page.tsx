@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ProfessorsIndex } from "./ProfessorsIndex";
+import ProfessorsLoading from "./loading";
 import { fetchProfessorNames } from "@/lib/professors";
 
 export const revalidate = 86_400;
@@ -17,6 +19,8 @@ export default async function ProfessorsPage() {
   const professors = await fetchProfessorNames();
 
   return (
-    <ProfessorsIndex professors={professors} />
+    <Suspense fallback={<ProfessorsLoading />}>
+      <ProfessorsIndex professors={professors} />
+    </Suspense>
   );
 }
