@@ -27,6 +27,13 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const badRequest = (message: string) =>
   NextResponse.json({ error: message }, { status: 400 });
 
+function professorSearchQuery(name: string): string {
+  // Bocconi's search returns no rows for names with apostrophes. Search the
+  // longest apostrophe-free substring and check the full teacher name below.
+  const parts = name.split(/['’]/).map((part) => part.trim());
+  return parts.sort((a, b) => b.length - a.length)[0] || name;
+}
+
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const room = (params.get("room") ?? "").trim();
@@ -72,7 +79,7 @@ export async function GET(request: NextRequest) {
       endDate: new Date(`${to}T00:00:00Z`),
       room: room || undefined,
       // Scope the scrape upstream: an empty query fetches the whole campus.
-      query: room ? undefined : classId ? parseClassId(classId)?.code : prof,
+      query: room ? undefined : selectedClass?.code ?? professorSearchQuery(prof),
       revalidateSeconds: UPSTREAM_REVALIDATE_SECONDS,
       timeoutMs: day ? DAY_MODE_TIMEOUT_MS : classId ? DAY_MODE_TIMEOUT_MS : undefined,
     });

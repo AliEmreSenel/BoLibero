@@ -72,6 +72,30 @@ describe("GET /api/events", () => {
     expect(url.searchParams.get("ric_aula")).toBe("Aula 1");
   });
 
+  it.each([
+    ["SAVARE' G.", "SAVARE"],
+    ["D'ANGELO V.", "ANGELO V."],
+    ["D’ANGELO V.", "ANGELO V."],
+  ])("finds %s with an apostrophe-free upstream query", async (name, query) => {
+    const schedule = html
+      .replace("SAVOCHKIN A.", name)
+      .replace("GARCIA-LOPEZ J.", `${name} JR.`);
+    const fetchMock = vi.fn(async (input: URL) =>
+      htmlResponse(input.searchParams.get("ric_descriz") === query ? schedule : "")
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const params = new URLSearchParams({ prof: name, from: "2026-10-01", to: "2026-10-03" });
+    const response = await eventsGET(new NextRequest(`http://localhost/api/events?${params}`));
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(upstreamQueryOf(fetchMock.mock.calls[0])).toBe(query);
+    const { events } = await response.json();
+    expect(events).toHaveLength(1);
+    expect(events[0].teachers).toEqual([name, "MILANI S."]);
+  });
+
   it("treats a zero-event day-mode scrape as a failure with no-store", async () => {
     vi.stubGlobal(
       "fetch",
